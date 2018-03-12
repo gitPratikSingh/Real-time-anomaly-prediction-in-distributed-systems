@@ -1,5 +1,4 @@
-# DistributedSystem
-CSC 724
+![Alt text](capture.png?raw=true "Real-time anomaly prediction in distributed systems")
 
 Topic: Anomaly detection & proactive fault management
 

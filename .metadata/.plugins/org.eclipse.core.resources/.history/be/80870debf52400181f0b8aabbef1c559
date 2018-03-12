@@ -1,0 +1,24 @@
+'''
+Created on Mar 11, 2018
+
+@author: pratik
+'''
+
+
+import os
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.0.2 pyspark-shell'
+
+"C:\Users\pratik\Desktop\Courses\CSC548\Shared_VM\Spark\spark-2.2.0-bin-hadoop2.7\python\pyspark"
+
+#    Spark
+from pyspark import SparkContext
+#    Spark Streaming
+from pyspark.streaming import StreamingContext
+#    Kafka
+from pyspark.streaming.kafka import KafkaUtils
+#    json parsing
+import json
+
+
+if __name__ == '__main__':
+    pass

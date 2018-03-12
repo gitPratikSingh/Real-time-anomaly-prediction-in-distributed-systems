@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;StreamingApp/main/KafkaProducer&apos; to &apos;KafkaProducer.py&apos;" description="Rename resource &apos;KafkaProducer&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="main/KafkaProducer" name="KafkaProducer.py" stamp="1520822526244" updateReferences="true"/>
+</session>

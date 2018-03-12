@@ -1,4 +1,4 @@
-![Alt text](capture.png?raw=true "Real-time anomaly prediction in distributed systems")
+![Real-time anomaly prediction in distributed systems](https://github.com/gitPratikSingh/Real-time-anomaly-prediction-in-distributed-systems/blob/master/Capture.PNG?raw=true "Real-time anomaly prediction in distributed systems")
 
 Topic: Anomaly detection & proactive fault management
 

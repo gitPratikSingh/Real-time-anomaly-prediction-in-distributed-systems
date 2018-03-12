@@ -1,1 +1,0 @@
-INDEX VERSION 1.130+C:\Users\pratik\Desktop\HTM_WORKSPACE\.metadata\.plugins\org.eclipse.jdt.core

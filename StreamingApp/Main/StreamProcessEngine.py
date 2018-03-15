@@ -24,7 +24,7 @@ def streamProcessing():
         [ZK quorum], [consumer group id], [per-topic number of Kafka partitions to consume])
     """
     
-    kafkaStream = KafkaUtils.createStream(ssc, 'ec2-18-216-14-9.us-east-2.compute.amazonaws.com:2181', 'spark-streaming', {'cpu_metric':1})
+    kafkaStream = KafkaUtils.createStream(ssc, 'ec2-18-219-238-85.us-east-2.compute.amazonaws.com:2181', 'spark-streaming', {'cpu_metric':1})
     lines = kafkaStream.map(lambda x: x[1])
     HTM.PlainModel.Model.run(lines)
     lines.pprint()

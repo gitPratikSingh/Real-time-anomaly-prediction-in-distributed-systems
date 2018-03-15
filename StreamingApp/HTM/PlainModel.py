@@ -33,8 +33,6 @@ class Model:
         
         encodingWidth = (scalarEncoder.getWidth())
         
-        print(encodingWidth)
-        
         sp = SpatialPooler(
             inputDimensions=(encodingWidth,),
             columnDimensions=(self.spParams["columnCount"],),
@@ -79,7 +77,7 @@ class Model:
         
     def run(self, jsonData):
         
-        print(jsonData)
+        print("Record #" + str(self.count) + " Data: " + jsonData)
         _dict = json.loads(jsonData)
         
         # Convert data value string into float.
@@ -116,6 +114,8 @@ class Model:
         bucketIdx = self.scalarEncoder.getBucketIndices(cpuMetric)[0]
         
         self.count = self.count + 1
+        print("model.count " + str(self.count))
+        
         # Run classifier to translate active cells back to scalar value.
         classifierResult = self.classifier.compute(
           recordNum=self.count,
@@ -127,9 +127,15 @@ class Model:
           learn=True,
           infer=True
         )
-    
+        
+        #print(classifierResult);
         # Print the best prediction for 1 step out.
         oneStepConfidence, oneStep = sorted(zip(classifierResult[1], classifierResult["actualValues"]), reverse=True)[0]
+        """twoStepConfidence, twoStep = sorted(zip(classifierResult[2], classifierResult["actualValues"]), reverse=True)[0]
+        thirdStepConfidence, thirdStep = sorted(zip(classifierResult[3], classifierResult["actualValues"]), reverse=True)[0]
+        thirdStepConfidence, forthStep = sorted(zip(classifierResult[4], classifierResult["actualValues"]), reverse=True)[0]
+        fifthStepConfidence, fifthStep = sorted(zip(classifierResult[5], classifierResult["actualValues"]), reverse=True)[0]
+        """
         
         print("1-step: {:16} ({:4.4}%)".format(oneStep, oneStepConfidence * 100))
         

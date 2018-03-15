@@ -16,42 +16,30 @@ from pyspark.streaming.kafka import KafkaUtils
 
 class StreamApp:
     
-    def utilMapFunc(self, time, rdd):
-        taken = rdd.take(1)
-        print("-------------------------------------------")
-        print("Time: %s" % time)
-        print("-------------------------------------------")
-        for record in taken[:10]:
-            print(record)
-            self.model.run(record)    
-        if len(taken) > 10:
-            print("...")
-        print("")
-    
-        
+    def runModel(self, model, data):
+        model.run(data)
+            
     def streamProcessing(self):
         sc = SparkContext(master="local[*]", appName="PythonSparkStreamingKafka")
-        sc.setLogLevel("WARN")
-        ssc = StreamingContext(sc,10)
+        sc.setLogLevel("OFF")
+        ssc = StreamingContext(sc,5)
+        model = Model()
         
         """
         kafkaStream = KafkaUtils.createStream(streamingContext, \
             [ZK quorum], [consumer group id], [per-topic number of Kafka partitions to consume])
         """
         
-        kafkaStream = KafkaUtils.createStream(ssc, 'ec2-18-216-14-9.us-east-2.compute.amazonaws.com:2181', 'spark-streaming', {'cpu_metric':1})
+        kafkaStream = KafkaUtils.createStream(ssc, 'ec2-18-219-238-85.us-east-2.compute.amazonaws.com:2181', 'spark-streaming', {'cpu_metric':1})
         lines = kafkaStream.map(lambda x: x[1])
         #//lines.foreachRDD(func)
-        #model.run(lines)    
-        lines.foreachRDD(self.utilMapFunc)
+        lines.foreachRDD(lambda rdd: rdd.foreach( lambda data: self.runModel(model, data)))
         
         ssc.start()  
         ssc.awaitTermination()
         
         
 if __name__ == '__main__':
-    streamApp = StreamApp()
-    streamApp.model = Model()
-    streamApp.streamProcessing()
+    StreamApp().streamProcessing()
     
     

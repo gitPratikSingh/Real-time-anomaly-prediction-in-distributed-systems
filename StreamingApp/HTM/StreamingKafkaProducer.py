@@ -14,13 +14,14 @@ class Producer(threading.Thread):
         self.stop_event.set()
 
     def run(self):
-        producer = KafkaProducer(value_serializer=lambda v: json.dumps(v).encode('utf-8'), bootstrap_servers='ec2-18-216-219-24.us-east-2.compute.amazonaws.com:9092')
+        producer = KafkaProducer(value_serializer=lambda v: json.dumps(v).encode('utf-8'), bootstrap_servers='ec2-18-219-238-85.us-east-2.compute.amazonaws.com:9092')
 
         while not self.stop_event.is_set():
             cpu = psutil.cpu_percent(interval=1)
             mem = psutil.virtual_memory().percent 
             producer.send('cpu_metric', {"cpu_metric": cpu, "mem_metric":mem})
-            time.sleep(1)
+            print("Data pushed: "+ str(cpu))
+            time.sleep(2)
 
         producer.close()
         
@@ -31,7 +32,7 @@ def main():
     for t in tasks:
         t.start()
 
-    time.sleep(10)
+    time.sleep(1000)
     
     for task in tasks:
         task.stop()

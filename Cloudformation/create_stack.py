@@ -1,17 +1,19 @@
 import boto3
 import subprocess
 import time
+import os
 
-stackname = "test"
+
 epoch_time = str(int(time.time()))
-template_name = epoch_time + "template.json"
+stackname = "-".join(["Test", epoch_time])
+template_name = "_".join([epoch_time, "template.json"])
 key = "templates"
 bucket = "atambol"
 region = "us-east-2"
 template_url = "/".join(["https://s3." + region + ".amazonaws.com", bucket, key, template_name])
 
 # Create Template
-p = subprocess.Popen(['python', 'stack_template.py'], stdout=subprocess.PIPE)
+p = subprocess.Popen(['python', 'stack_template.py', '-i', epoch_time], stdout=subprocess.PIPE)
 out, err = p.communicate()
 if p.returncode is not 0:
     print(out, err)
@@ -19,7 +21,7 @@ else:
     # Upload template to s3
     s3 = boto3.client('s3')
     s3.upload_file(
-        Filename="template.json",
+        Filename=template_name,
         Bucket=bucket,
         Key="/".join([key, template_name])
     )
@@ -37,3 +39,5 @@ else:
         Bucket=bucket,
         Key="/".join([key, template_name])
     )
+
+    os.rename(template_name, "template.json")

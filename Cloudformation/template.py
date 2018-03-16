@@ -224,7 +224,7 @@ nat_instance = t.add_resource(ec2.Instance(
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(nat_security_group)],
-            AssociatePublicIpAddress='false',
+            AssociatePublicIpAddress='true',
             DeviceIndex='0',
             DeleteOnTermination='true',
             SubnetId=Ref(public_subnet))],
@@ -253,7 +253,7 @@ nat_instance = t.add_resource(ec2.Instance(
     CreationPolicy=CreationPolicy(
         ResourceSignal=ResourceSignal(
             Count=1,
-            Timeout='PT5M')),
+            Timeout='PT15M')),
     DependsOn=["InternetGatewayAttachment"],
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "Nat"]))

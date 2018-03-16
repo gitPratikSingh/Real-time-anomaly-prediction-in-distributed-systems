@@ -1,10 +1,10 @@
 sudo docker run --rm -it -p 2181:2181 \
 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 \
--e ADV_HOST=ec2-18-219-238-85.us-east-2.compute.amazonaws.com landoop/fast-data-dev
+-e ADV_HOST=ec2-18-218-153-149.us-east-2.compute.amazonaws.com landoop/fast-data-dev
 
 ADV_HOST=ec2-18-216-219-24.us-east-2.compute.amazonaws.com
 
-docker run --rm -it --net=host landoop/fast-data-dev bash
+sudo docker run --rm -it --net=host landoop/fast-data-dev bash
 
 kafka-topics --zookeeper 127.0.0.1:2181 --create --topic cpu_metric \
 --partitions 1 --replication-factor 1

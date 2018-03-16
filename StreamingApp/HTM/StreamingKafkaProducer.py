@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import threading, logging, time
 from kafka import KafkaProducer
 
@@ -9,12 +10,13 @@ class Producer(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.stop_event = threading.Event()
+        self.bootstrap_servers = sys.argv[1]+':9092'
         
     def stop(self):
         self.stop_event.set()
 
     def run(self):
-        producer = KafkaProducer(value_serializer=lambda v: json.dumps(v).encode('utf-8'), bootstrap_servers='ec2-18-219-238-85.us-east-2.compute.amazonaws.com:9092')
+        producer = KafkaProducer(value_serializer=lambda v: json.dumps(v).encode('utf-8'), bootstrap_servers=self.bootstrap_servers)
 
         while not self.stop_event.is_set():
             cpu = psutil.cpu_percent(interval=1)
@@ -26,6 +28,7 @@ class Producer(threading.Thread):
         producer.close()
         
 def main():
+    
     tasks = [
         Producer()    ]
 

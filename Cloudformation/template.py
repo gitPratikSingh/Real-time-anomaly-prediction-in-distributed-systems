@@ -26,7 +26,7 @@ address = {
 }
 
 ami_ids = {
-    "nat": "ami-92a6fef7",
+    "nat": "ami-f27b5a97",
     "rubis": "ami-d90c57bc",
     "kafka": "ami-d90c57bc",
     "spark": "ami-d90c57bc"
@@ -127,11 +127,6 @@ private_route_association = t.add_resource(ec2.SubnetRouteTableAssociation(
     RouteTableId=Ref(private_route_table),
 ))
 
-eip = t.add_resource(ec2.EIP(
-    'NatEip',
-    Domain="vpc",
-))
-
 nat_security_group = t.add_resource(ec2.SecurityGroup(
     'NatSecurityGroup',
     GroupDescription='Nat security group',
@@ -172,38 +167,38 @@ nat_security_group = t.add_resource(ec2.SecurityGroup(
     ]
 ))
 
-instance_metadata = autoscaling.Metadata(
+nat_instance_metadata = autoscaling.Metadata(
     cfn.Init({
         'config': cfn.InitConfig(
             packages={'yum': {'httpd': []}},
             files=cfn.InitFiles({
-                '/etc/cfn/cfn-hup.conf': cfn.InitFile(content=Join('',
-                                                               ['[main]\n',
-                                                                'stack=',
-                                                                Ref('AWS::StackName'),
-                                                                '\n',
-                                                                'region=',
-                                                                Ref('AWS::Region'),
-                                                                '\n',
-                                                                ]),
-                                                  mode='000400',
-                                                  owner='root',
-                                                  group='root'),
+                '/etc/cfn/cfn-hup.conf': cfn.InitFile(
+                    content=Join('',
+                        ['[main]\n',
+                         'stack=',
+                         Ref('AWS::StackName'),
+                         '\n',
+                         'region=',
+                         Ref('AWS::Region'),
+                         '\n',
+                        ]),
+                    mode='000400',
+                    owner='root',
+                    group='root'),
                 '/etc/cfn/hooks.d/cfn-auto-reloader.conf': cfn.InitFile(
                     content=Join('',
-                                 ['[cfn-auto-reloader-hook]\n',
-                                  'triggers=post.update\n',
-                                  'path=Resources.NatInstance.\
-Metadata.AWS::CloudFormation::Init\n',
-                                  'action=/opt/aws/bin/cfn-init -v ',
-                                  '         --stack ',
-                                  Ref('AWS::StackName'),
-                                  '         --resource NatInstance ',
-                                  '         --region ',
-                                  Ref('AWS::Region'),
-                                  '\n',
-                                  'runas=root\n',
-                                  ]))}),
+                        ['[cfn-auto-reloader-hook]\n',
+                         'triggers=post.update\n',
+                         'path=Resources.NatInstance.Metadata.AWS::CloudFormation::Init\n',
+                         'action=/opt/aws/bin/cfn-init -v ',
+                         '         --stack ',
+                         Ref('AWS::StackName'),
+                         '         --resource NatInstance ',
+                         '         --region ',
+                         Ref('AWS::Region'),
+                         '\n',
+                         'runas=root\n',
+                        ]))}),
             services={
                 'sysvinit': cfn.InitServices({
                     'httpd': cfn.InitService(
@@ -217,16 +212,19 @@ Metadata.AWS::CloudFormation::Init\n',
                             '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
                         ])})})}))
 
+# waithandle_nat = t.add_resource(cfn.WaitConditionHandle("WaitHandleNat"))
+
 nat_instance = t.add_resource(ec2.Instance(
     'NatInstance',
     ImageId=ami_ids["nat"],
     InstanceType="t2.micro",
-    Metadata=instance_metadata,
+    Metadata=nat_instance_metadata,
     KeyName=keyname,
+    SourceDestCheck='false',
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(nat_security_group)],
-            AssociatePublicIpAddress='true',
+            AssociatePublicIpAddress='false',
             DeviceIndex='0',
             DeleteOnTermination='true',
             SubnetId=Ref(public_subnet))],
@@ -250,120 +248,125 @@ nat_instance = t.add_resource(ec2.Instance(
                 '         --region ',
                 Ref('AWS::Region'),
                 '\n',
+                # '/opt/aws/bin/cfn-signal -e 0 -r \"NatInstance Creation Complete\" ', Ref(waithandle_nat), '\n'
             ])),
     CreationPolicy=CreationPolicy(
         ResourceSignal=ResourceSignal(
             Count=1,
-            Timeout='PT15M')),
-
+            Timeout='PT5M')),
+    DependsOn=["InternetGatewayAttachment"],
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "Nat"]))
 ))
-'''
-instance_security_group = t.add_resource(ec2.SecurityGroup(
-    'InstanceSecurityGroup',
-    GroupDescription='Instance security group',
-    VpcId=Ref(vpc),
-    SecurityGroupIngress=[
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=22,
-            ToPort=22,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=80,
-            ToPort=80,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=443,
-            ToPort=443,
-            CidrIp='0.0.0.0/0'
-        )
-    ],
-    SecurityGroupEgress=[
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=22,
-            ToPort=22,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=443,
-            ToPort=443,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=80,
-            ToPort=80,
-            CidrIp='0.0.0.0/0'
-        )
-    ]
+
+eip = t.add_resource(ec2.EIP(
+    'NatEip',
+    DependsOn='InternetGatewayAttachment',
+    InstanceId=Ref(nat_instance)
 ))
 
-rubis_instance = t.add_resource(ec2.Instance(
-    'RubisInstance',
-    ImageId=ami_ids["rubis"],
-    InstanceType="t2.micro",
-    KeyName=keyname,
-    NetworkInterfaces=[
-        ec2.NetworkInterfaceProperty(
-            GroupSet=[Ref(instance_security_group)],
-            DeviceIndex='0',
-            DeleteOnTermination='true',
-            SubnetId=Ref(private_subnet))],
-    UserData=Base64(
-        Join(
-            '',
-            [
-                '#!/bin/bash -xe\n',
-                'yum update -y aws-cfn-bootstrap\n',
-                '/opt/aws/bin/cfn-init -v ',
-                '         --stack ',
-                Ref('AWS::StackName'),
-                '         --resource RubisInstance ',
-                '         --region ',
-                Ref('AWS::Region'),
-                '\n',
-                '/opt/aws/bin/cfn-signal -e $? ',
-                '         --stack ',
-                Ref('AWS::StackName'),
-                '         --resource RubisInstance ',
-                '         --region ',
-                Ref('AWS::Region'),
-                '\n',
-            ])),
-    CreationPolicy=CreationPolicy(
-        ResourceSignal=ResourceSignal(
-            Count=1,
-            Timeout='PT15M')),
-    Tags=Tags(
-        Name=Join("_", [Ref("AWS::StackName"), "Rubis"]))
-))
-
-# waithandle_nat = t.add_resource(ec2.WaitConditionHandle("WaitHandle_nat"))
-#
-# mywaitcondition = t.add_resource(
-#     ec2.WaitCondition(
-#         "WaitHandle_nat",
+# nat_waitcondition = t.add_resource(
+#     cfn.WaitCondition(
+#         "WaitConditionNat",
+#         DependsOn=["NatInstance"],
 #         Handle=Ref(waithandle_nat),
-#         Timeout="300",
+#         Timeout=300,
 #     )
 # )
-
 
 default_private_route = t.add_resource(ec2.Route(
     'PrivateDefaultRoute',
     RouteTableId=Ref(private_route_table),
     DestinationCidrBlock='0.0.0.0/0',
-    GatewayId=Ref(nat_instance),
+    InstanceId=Ref(nat_instance),
+    DependsOn=["NatInstance"],
 ))
-'''
+
+# instance_metadata = autoscaling.Metadata(
+#     cfn.Init({
+#         'config': cfn.InitConfig(
+#             packages={'yum': {'httpd': []}},
+#             files=cfn.InitFiles({
+#                 '/etc/cfn/cfn-hup.conf': cfn.InitFile(content=Join('',
+#                                                                ['[main]\n',
+#                                                                 'stack=',
+#                                                                 Ref('AWS::StackName'),
+#                                                                 '\n',
+#                                                                 'region=',
+#                                                                 Ref('AWS::Region'),
+#                                                                 '\n',
+#                                                                 ]),
+#                                                       mode='000400',
+#                                                       owner='root',
+#                                                       group='root'),
+#                 '/etc/cfn/hooks.d/cfn-auto-reloader.conf': cfn.InitFile(
+#                     content=Join('',
+#                                  ['[cfn-auto-reloader-hook]\n',
+#                                   'triggers=post.update\n',
+#                                   'path=Resources.NatInstance.\
+# Metadata.AWS::CloudFormation::Init\n',
+#                                   'action=/opt/aws/bin/cfn-init -v ',
+#                                   '         --stack ',
+#                                   Ref('AWS::StackName'),
+#                                   '         --resource NatInstance ',
+#                                   '         --region ',
+#                                   Ref('AWS::Region'),
+#                                   '\n',
+#                                   'runas=root\n',
+#                                   ]))}),
+#             services={
+#                 'sysvinit': cfn.InitServices({
+#                     'httpd': cfn.InitService(
+#                         enabled=True,
+#                         ensureRunning=True),
+#                     'cfn-hup': cfn.InitService(
+#                         enabled=True,
+#                         ensureRunning=True,
+#                         files=[
+#                             '/etc/cfn/cfn-hup.conf',
+#                             '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+#                         ])})})}))
+#
+# rubis_instance = t.add_resource(ec2.Instance(
+#     'RubisInstance',
+#     ImageId=ami_ids["rubis"],
+#     InstanceType="t2.micro",
+#     KeyName=keyname,
+#     NetworkInterfaces=[
+#         ec2.NetworkInterfaceProperty(
+#             DeviceIndex='0',
+#             DeleteOnTermination='true',
+#             SubnetId=Ref(private_subnet))],
+#     UserData=Base64(
+#         Join(
+#             '',
+#             [
+#                 '#!/bin/bash -xe\n',
+#                 'yum update -y aws-cfn-bootstrap\n',
+#                 '/opt/aws/bin/cfn-init -v ',
+#                 '         --stack ',
+#                 Ref('AWS::StackName'),
+#                 '         --resource RubisInstance ',
+#                 '         --region ',
+#                 Ref('AWS::Region'),
+#                 '\n',
+#                 '/opt/aws/bin/cfn-signal -e $? ',
+#                 '         --stack ',
+#                 Ref('AWS::StackName'),
+#                 '         --resource RubisInstance ',
+#                 '         --region ',
+#                 Ref('AWS::Region'),
+#                 '\n',
+#             ])),
+#     CreationPolicy=CreationPolicy(
+#         ResourceSignal=ResourceSignal(
+#             Count=1,
+#             Timeout='PT15M')),
+#     DependsOn=["NatInstance"],
+#     Tags=Tags(
+#         Name=Join("_", [Ref("AWS::StackName"), "Rubis"]))
+# ))
+
 # Generate a template
 with open(template_file, "w") as f:
     f.writelines(t.to_json())

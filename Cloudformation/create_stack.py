@@ -13,7 +13,7 @@ region = "us-east-2"
 template_url = "/".join(["https://s3." + region + ".amazonaws.com", bucket, key, template_name])
 
 # Create Template
-p = subprocess.Popen(['python', 'stack_template.py', '-i', epoch_time], stdout=subprocess.PIPE)
+p = subprocess.Popen(['python', 'template.py', '-i', epoch_time], stdout=subprocess.PIPE)
 out, err = p.communicate()
 if p.returncode is not 0:
     print(out, err)

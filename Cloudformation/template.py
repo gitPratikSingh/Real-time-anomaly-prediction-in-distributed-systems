@@ -141,78 +141,18 @@ nat_security_group = t.add_resource(ec2.SecurityGroup(
     VpcId=Ref(vpc),
     SecurityGroupIngress=[
         ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=22,
-            ToPort=22,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=80,
-            ToPort=80,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=443,
-            ToPort=443,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=53,
-            ToPort=53,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='udp',
-            FromPort=53,
-            ToPort=53,
+            IpProtocol='-1',
+            FromPort=-1,
+            ToPort=-1,
             CidrIp='0.0.0.0/0'
         )
     ],
     SecurityGroupEgress=[
         ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=443,
-            ToPort=443,
+            IpProtocol='-1',
+            FromPort=-1,
+            ToPort=-1,
             CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=80,
-            ToPort=80,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=53,
-            ToPort=53,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='udp',
-            FromPort=53,
-            ToPort=53,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=22,
-            ToPort=22,
-            CidrIp=address['private_subnet_cidr']
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=80,
-            ToPort=80,
-            CidrIp=address['private_subnet_cidr']
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=443,
-            ToPort=443,
-            CidrIp=address['private_subnet_cidr']
         )
     ]
 ))
@@ -343,65 +283,17 @@ instance_security_group = t.add_resource(ec2.SecurityGroup(
     VpcId=Ref(vpc),
     SecurityGroupIngress=[
         ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=22,
-            ToPort=22,
-            CidrIp=address["vpc_cidr"]
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=443,
-            ToPort=443,
-            CidrIp=address["vpc_cidr"]
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=80,
-            ToPort=80,
-            CidrIp=address["vpc_cidr"]
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=53,
-            ToPort=53,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='udp',
-            FromPort=53,
-            ToPort=53,
+            IpProtocol='-1',
+            FromPort=-1,
+            ToPort=-1,
             CidrIp='0.0.0.0/0'
         )
     ],
     SecurityGroupEgress=[
         ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=22,
-            ToPort=22,
-            CidrIp=address["vpc_cidr"]
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=443,
-            ToPort=443,
-            CidrIp=address["vpc_cidr"]
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=80,
-            ToPort=80,
-            CidrIp=address["vpc_cidr"]
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='tcp',
-            FromPort=53,
-            ToPort=53,
-            CidrIp='0.0.0.0/0'
-        ),
-        ec2.SecurityGroupRule(
-            IpProtocol='udp',
-            FromPort=53,
-            ToPort=53,
+            IpProtocol='-1',
+            FromPort=-1,
+            ToPort=-1,
             CidrIp='0.0.0.0/0'
         )
     ]

@@ -16,13 +16,16 @@ keyname = args.keyname
 epoch_time = args.id
 template_file = "_".join([epoch_time, "template.json"])
 hostname = socket.gethostname()
+region = 'us-east-2'
+availability_zone = region + 'b'
 description = "724 stack created by {} at {}".format(hostname, epoch_time)
 address = {
     "vpc_cidr": '172.25.0.0/16',
     "public_subnet_cidr": '172.25.0.0/17',
     "private_subnet_cidr": '172.25.128.0/17',
-    "kafka": ["172.25.128.1"],
-    "rubis": ["172.25.130.1"]
+    # "nat": '172.25.0.5/32',
+    "kafka": "172.25.129.5/32",
+    "rubis": "172.25.130.5/32"
 }
 
 ami_ids = {
@@ -72,6 +75,7 @@ public_subnet = t.add_resource(ec2.Subnet(
     'PublicSubnet',
     CidrBlock=Ref(public_subnet_cidr),
     MapPublicIpOnLaunch=True,
+    AvailabilityZone=availability_zone,
     VpcId=Ref(vpc),
 ))
 
@@ -79,6 +83,7 @@ private_subnet = t.add_resource(ec2.Subnet(
     'PrivateSubnet',
     CidrBlock=Ref(private_subnet_cidr),
     MapPublicIpOnLaunch=False,
+    AvailabilityZone=availability_zone,
     VpcId=Ref(vpc),
 ))
 
@@ -119,6 +124,9 @@ default_public_route = t.add_resource(ec2.Route(
 private_route_table = t.add_resource(ec2.RouteTable(
     'PrivateRouteTable',
     VpcId=Ref(vpc),
+    Tags=Tags(
+        Name=Join("_", [Ref("AWS::StackName"), "private", "route", "table"])
+    )
 ))
 
 private_route_association = t.add_resource(ec2.SubnetRouteTableAssociation(
@@ -142,13 +150,25 @@ nat_security_group = t.add_resource(ec2.SecurityGroup(
             IpProtocol='tcp',
             FromPort=80,
             ToPort=80,
-            CidrIp=address['private_subnet_cidr']
+            CidrIp='0.0.0.0/0'
         ),
         ec2.SecurityGroupRule(
             IpProtocol='tcp',
             FromPort=443,
             ToPort=443,
-            CidrIp=address['private_subnet_cidr']
+            CidrIp='0.0.0.0/0'
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=53,
+            ToPort=53,
+            CidrIp='0.0.0.0/0'
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='udp',
+            FromPort=53,
+            ToPort=53,
+            CidrIp='0.0.0.0/0'
         )
     ],
     SecurityGroupEgress=[
@@ -163,6 +183,36 @@ nat_security_group = t.add_resource(ec2.SecurityGroup(
             FromPort=80,
             ToPort=80,
             CidrIp='0.0.0.0/0'
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=53,
+            ToPort=53,
+            CidrIp='0.0.0.0/0'
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='udp',
+            FromPort=53,
+            ToPort=53,
+            CidrIp='0.0.0.0/0'
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=22,
+            ToPort=22,
+            CidrIp=address['private_subnet_cidr']
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=80,
+            ToPort=80,
+            CidrIp=address['private_subnet_cidr']
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=443,
+            ToPort=443,
+            CidrIp=address['private_subnet_cidr']
         )
     ]
 ))
@@ -220,6 +270,7 @@ nat_instance = t.add_resource(ec2.Instance(
     KeyName=keyname,
     SourceDestCheck='false',
     IamInstanceProfile='NatS3Access',
+    # PrivateIpAddress=address["nat"],
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(nat_security_group)],
@@ -236,6 +287,19 @@ nat_instance = t.add_resource(ec2.Instance(
                 'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/724_keypair.pem /home/ec2-user/.ssh/724_keypair.pem\n',
                 'chmod 400 /home/ec2-user/.ssh/724_keypair.pem\n',
                 'chown ec2-user.ec2-user /home/ec2-user/.ssh/724_keypair.pem\n',
+
+                "# Configure iptables\n",
+                "/sbin/iptables -t nat -A POSTROUTING -o eth0 -s 0.0.0.0/0 -j MASQUERADE\n",
+                "/sbin/iptables-save > /etc/sysconfig/iptables\n",
+                "# Configure ip forwarding and redirects\n",
+                "echo 1 >  /proc/sys/net/ipv4/ip_forward && echo 0 >  /proc/sys/net/ipv4/conf/eth0/send_redirects\n",
+                "mkdir -p /etc/sysctl.d/\n",
+                "cat <<EOF > /etc/sysctl.d/nat.conf\n",
+                "net.ipv4.ip_forward = 1\n",
+                "net.ipv4.conf.eth0.send_redirects = 0\n",
+                "EOF\n",
+                "sysctl -p /etc/sysctl.d/nat.conf\n",
+
                 '/opt/aws/bin/cfn-init -v ',
                 '         --stack=',
                 Ref('AWS::StackName'),
@@ -283,7 +347,31 @@ instance_security_group = t.add_resource(ec2.SecurityGroup(
             IpProtocol='tcp',
             FromPort=22,
             ToPort=22,
-            CidrIp=address['private_subnet_cidr']
+            CidrIp=address["vpc_cidr"]
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=443,
+            ToPort=443,
+            CidrIp=address["vpc_cidr"]
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=80,
+            ToPort=80,
+            CidrIp=address["vpc_cidr"]
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=53,
+            ToPort=53,
+            CidrIp='0.0.0.0/0'
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='udp',
+            FromPort=53,
+            ToPort=53,
+            CidrIp='0.0.0.0/0'
         )
     ],
     SecurityGroupEgress=[
@@ -291,7 +379,31 @@ instance_security_group = t.add_resource(ec2.SecurityGroup(
             IpProtocol='tcp',
             FromPort=22,
             ToPort=22,
-            CidrIp=address['private_subnet_cidr']
+            CidrIp=address["vpc_cidr"]
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=443,
+            ToPort=443,
+            CidrIp=address["vpc_cidr"]
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=80,
+            ToPort=80,
+            CidrIp=address["vpc_cidr"]
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort=53,
+            ToPort=53,
+            CidrIp='0.0.0.0/0'
+        ),
+        ec2.SecurityGroupRule(
+            IpProtocol='udp',
+            FromPort=53,
+            ToPort=53,
+            CidrIp='0.0.0.0/0'
         )
     ]
 ))

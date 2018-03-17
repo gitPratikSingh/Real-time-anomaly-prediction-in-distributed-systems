@@ -75,8 +75,9 @@ class Model:
         self.scalarEncoder = scalarEncoder
         
         
-    def run(self, jsonData, count):
+    def run(self, jsonData):
         
+        self.count = self.count + 1
         print("Record #" + str(self.count) + " Data: " + jsonData)
         _dict = json.loads(jsonData)
         
@@ -113,11 +114,11 @@ class Model:
         # Get the bucket info for this input value for classification.
         bucketIdx = self.scalarEncoder.getBucketIndices(cpuMetric)[0]
         
-        print("model.count " + str(count))
+        print("model.count " + str(self.count))
         
         # Run classifier to translate active cells back to scalar value.
         classifierResult = self.classifier.compute(
-          recordNum=count,
+          recordNum=self.count,
           patternNZ=activeCells,
           classification={
             "bucketIdx": bucketIdx,

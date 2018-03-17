@@ -23,9 +23,9 @@ address = {
     "vpc_cidr": '172.25.0.0/16',
     "public_subnet_cidr": '172.25.0.0/17',
     "private_subnet_cidr": '172.25.128.0/17',
-    "nat": '172.25.0.5/32',
-    "kafka": "172.25.129.5/32",
-    "rubis": "172.25.130.5/32"
+    "nat": '172.25.0.5',
+    "kafka": "172.25.129.5",
+    "rubis": "172.25.130.5"
 }
 
 ami_ids = {
@@ -209,12 +209,13 @@ nat_instance = t.add_resource(ec2.Instance(
     Metadata=nat_instance_metadata,
     KeyName=keyname,
     SourceDestCheck='false',
-    IamInstanceProfile='NatS3Access',
+    IamInstanceProfile='NatS3Access',   # Ensure this is created before running this template
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(nat_security_group)],
             AssociatePublicIpAddress='true',
             DeviceIndex='0',
+            PrivateIpAddress=address['nat'],
             DeleteOnTermination='true',
             SubnetId=Ref(public_subnet))],
     UserData=Base64(
@@ -262,7 +263,7 @@ nat_instance = t.add_resource(ec2.Instance(
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "Nat"]))
 ))
-#
+
 # eip = t.add_resource(ec2.EIP(
 #     'NatEip',
 #     DependsOn='InternetGatewayAttachment',
@@ -361,6 +362,7 @@ rubis_instance = t.add_resource(ec2.Instance(
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
             AssociatePublicIpAddress='false',
+            PrivateIpAddress=address['rubis'],
             DeviceIndex='0',
             DeleteOnTermination='true',
             SubnetId=Ref(private_subnet))],

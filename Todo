@@ -1,0 +1,9 @@
+Cloudformation: Harden Security group rules
+
+Rubis:  identify installation steps
+        create cookbook
+        add metrics cron
+        
+Kafka:  Add instance
+        Configure kafka - topic, producer ..
+        

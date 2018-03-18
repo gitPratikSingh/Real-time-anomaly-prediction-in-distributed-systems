@@ -105,4 +105,7 @@ http://www-tandfonline-com.prox.lib.ncsu.edu/doi/abs/10.1080/07474938.2010.48155
 * Create Stack : `python create_stack.py`
 * Key to access clients : 724_keypair.pem
 * Ensure NatS3Access IAM role is created before running this template
-* References: [Optimizing CFN templates](https://aws.amazon.com/blogs/devops/optimize-aws-cloudformation-templates/)
+* References: 
+    * [Optimizing CFN templates](https://aws.amazon.com/blogs/devops/optimize-aws-cloudformation-templates/)
+    * [LAMP stack installation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-LAMP.html)
+                

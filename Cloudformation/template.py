@@ -373,10 +373,11 @@ rubis_instance = t.add_resource(ec2.Instance(
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
-            AssociatePublicIpAddress='false',
+            # AssociatePublicIpAddress='true',
             PrivateIpAddress=address['rubis'],
             DeviceIndex='0',
             DeleteOnTermination='true',
+            # SubnetId=Ref(public_subnet))],
             SubnetId=Ref(private_subnet))],
     UserData=Base64(
         Join(
@@ -391,6 +392,30 @@ rubis_instance = t.add_resource(ec2.Instance(
                 '         --region=',
                 Ref('AWS::Region'),
                 '\n',
+
+                'sudo yum update -y\n',
+                'sudo yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
+                'sudo yum install -y httpd24 php70 mysql56-server php70-mysqlnd\n',
+                'sudo service httpd start\n',
+                'sudo chkconfig httpd on\n',
+                'chkconfig --list httpd\n',
+                'sudo usermod -a -G apache ec2-user\n',
+                'sudo chown -R ec2-user:apache /var/www\n',
+                'sudo chmod 2775 /var/www\n',
+                'find /var/www -type d -exec sudo chmod 2775 {} \;\n',
+                'find /var/www -type f -exec sudo chmod 0664 {} \;\n',
+                '#echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php\n',
+                'sudo service mysqld start\n',
+                'sudo mysql_secure_installation << EOF\n',
+                '\n',
+                'n\n',
+                'Y\n',
+                'Y\n',
+                'Y\n',
+                'Y\n',
+                'EOF\n',
+                'sudo chkconfig mysqld on\n',
+
                 '/opt/aws/bin/cfn-signal -e $? ',
                 '         --stack=',
                 Ref('AWS::StackName'),
@@ -402,7 +427,7 @@ rubis_instance = t.add_resource(ec2.Instance(
     CreationPolicy=CreationPolicy(
         ResourceSignal=ResourceSignal(
             Count=1,
-            Timeout='PT15M')),
+            Timeout='PT5M')),
     DependsOn=["PrivateDefaultRoute"],
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "Rubis"]))

@@ -30,7 +30,7 @@ address = {
 
 ami_ids = {
     "nat": "ami-f27b5a97",
-    "rubis": "ami-d90c57bc",
+    "rubis": "ami-ab1a31ce",
     "kafka": "ami-d90c57bc",
     "spark": "ami-d90c57bc"
 }
@@ -77,6 +77,9 @@ public_subnet = t.add_resource(ec2.Subnet(
     MapPublicIpOnLaunch=True,
     AvailabilityZone=availability_zone,
     VpcId=Ref(vpc),
+    Tags=Tags(
+        Name=Join("_", [Ref("AWS::StackName"), "public", "subnet"]),
+      )
 ))
 
 private_subnet = t.add_resource(ec2.Subnet(
@@ -85,6 +88,9 @@ private_subnet = t.add_resource(ec2.Subnet(
     MapPublicIpOnLaunch=False,
     AvailabilityZone=availability_zone,
     VpcId=Ref(vpc),
+    Tags=Tags(
+        Name=Join("_", [Ref("AWS::StackName"), "private", "subnet"]),
+      )
 ))
 
 igw = t.add_resource(ec2.InternetGateway(
@@ -111,14 +117,14 @@ public_route_table = t.add_resource(ec2.RouteTable(
 public_route_association = t.add_resource(ec2.SubnetRouteTableAssociation(
     'PublicRouteAssociation',
     SubnetId=Ref(public_subnet),
-    RouteTableId=Ref(public_route_table),
+    RouteTableId=Ref(public_route_table)
 ))
 
 default_public_route = t.add_resource(ec2.Route(
     'PublicDefaultRoute',
     RouteTableId=Ref(public_route_table),
     DestinationCidrBlock='0.0.0.0/0',
-    GatewayId=Ref(igw),
+    GatewayId=Ref(igw)
 ))
 
 private_route_table = t.add_resource(ec2.RouteTable(
@@ -132,13 +138,16 @@ private_route_table = t.add_resource(ec2.RouteTable(
 private_route_association = t.add_resource(ec2.SubnetRouteTableAssociation(
     'PrivateRouteAssociation',
     SubnetId=Ref(private_subnet),
-    RouteTableId=Ref(private_route_table),
+    RouteTableId=Ref(private_route_table)
 ))
 
 nat_security_group = t.add_resource(ec2.SecurityGroup(
     'NatSecurityGroup',
     GroupDescription='Nat security group',
     VpcId=Ref(vpc),
+    Tags=Tags(
+        Name=Join("_", [Ref("AWS::StackName"), "nat", "security", "group"]),
+      ),
     SecurityGroupIngress=[
         ec2.SecurityGroupRule(
             IpProtocol='-1',
@@ -258,7 +267,7 @@ nat_instance = t.add_resource(ec2.Instance(
     CreationPolicy=CreationPolicy(
         ResourceSignal=ResourceSignal(
             Count=1,
-            Timeout='PT15M')),
+            Timeout='PT5M')),
     DependsOn=["InternetGatewayAttachment"],
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "Nat"]))
@@ -275,13 +284,16 @@ default_private_route = t.add_resource(ec2.Route(
     RouteTableId=Ref(private_route_table),
     DestinationCidrBlock='0.0.0.0/0',
     InstanceId=Ref(nat_instance),
-    DependsOn=["NatInstance"],
+    DependsOn=["NatInstance"]
 ))
 
 instance_security_group = t.add_resource(ec2.SecurityGroup(
     'InstanceSecurityGroup',
     GroupDescription='Instance security group',
     VpcId=Ref(vpc),
+    Tags=Tags(
+        Name=Join("_", [Ref("AWS::StackName"), "instance", "security", "group"]),
+      ),
     SecurityGroupIngress=[
         ec2.SecurityGroupRule(
             IpProtocol='-1',

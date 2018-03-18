@@ -100,22 +100,9 @@ http://www-tandfonline-com.prox.lib.ncsu.edu/doi/abs/10.1080/07474938.2010.48155
 * LOAD5 load in last 5 minutes 
 
 ### System Setting
-GITHUB_REPO : git@github.ncsu.edu:psingh22/DistributedSystem.git <br>
-Amazon AMI : ami-f63b1193 (Ensure all instances are created using this AMI) <br>
+#### Cloudformation
 
-### Server Settings
-#### Manual Steps
-Copy server/client public key to the GitHub repository <br>
-Copy the one_key_to_rule_them_all.pem to .ssh folder of server <br>
-Run the following commands on the server
-```
-sudo yum install -y git
-git clone git@github.ncsu.edu:psingh22/DistributedSystem.git
-cd DistributedSystem/Deployment
-./install.sh [client|server]
-````
-
-#### Connecting with clients
-Key to access clients : one_key_to_rule_them_all.pem <br>
-Update this key in params.json <br>
-Ensure that the clients are created using this key <br>
+* Create Stack : `python create_stack.py`
+* Key to access clients : 724_keypair.pem
+* Ensure NatS3Access IAM role is created before running this template
+* References: [Optimizing CFN templates](https://aws.amazon.com/blogs/devops/optimize-aws-cloudformation-templates/)

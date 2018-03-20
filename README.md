@@ -1,8 +1,7 @@
 ![Real-time anomaly prediction in distributed systems](https://github.com/gitPratikSingh/Real-time-anomaly-prediction-in-distributed-systems/blob/master/Capture.PNG?raw=true "Real-time anomaly prediction in distributed systems")
 
 
-![Model Architectures]
-https://github.com/gitPratikSingh/Real-time-anomaly-prediction-in-distributed-systems/blob/master/ModelArchitecture.jpg
+![Model Architectures](https://github.com/gitPratikSingh/Real-time-anomaly-prediction-in-distributed-systems/blob/master/ModelArchitecture.jpg?raw=true "Model Architectures")
 
 Topic: Anomaly detection & proactive fault management
 

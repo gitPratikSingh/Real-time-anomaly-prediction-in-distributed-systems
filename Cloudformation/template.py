@@ -27,6 +27,8 @@ address = {
     "rubis_server": "172.25.130.5",
     "rubis_client": "172.25.130.6",
     "db": '172.25.130.7',
+    # "web_server": '172.25.0.8',
+    "web_server": '172.25.130.8',
 }
 
 ami_ids = {
@@ -34,6 +36,7 @@ ami_ids = {
     "rubis_server": "ami-ab1a31ce",
     "rubis_client": "ami-ab1a31ce",
     "db": "ami-ab1a31ce",
+    "web_server": "ami-ab1a31ce",
 }
 
 t = Template()
@@ -429,10 +432,72 @@ db_instance = t.add_resource(ec2.Instance(
     CreationPolicy=CreationPolicy(
         ResourceSignal=ResourceSignal(
             Count=1,
-            Timeout='PT10M')),
+            Timeout='PT5M')),
     DependsOn=["PrivateDefaultRoute"],
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "DB"]))
+))
+
+web_server_instance = t.add_resource(ec2.Instance(
+    'WebServerInstance',
+    ImageId=ami_ids["web_server"],
+    InstanceType="t2.micro",
+    Metadata=get_instance_metadata("WebServerInstance"),
+    KeyName=keyname,
+    SourceDestCheck='true',
+    NetworkInterfaces=[
+        ec2.NetworkInterfaceProperty(
+            GroupSet=[Ref(instance_security_group)],
+            # AssociatePublicIpAddress='true',
+            PrivateIpAddress=address['web_server'],
+            DeviceIndex='0',
+            DeleteOnTermination='true',
+            # SubnetId=Ref(public_subnet))],
+            SubnetId=Ref(private_subnet))],
+    UserData=Base64(
+        Join(
+            '',
+            [
+                '#!/bin/bash -xe\n',
+                'yum update -y aws-cfn-bootstrap\n',
+                '/opt/aws/bin/cfn-init -v ',
+                '         --stack=',
+                Ref('AWS::StackName'),
+                '         --resource=WebServerInstance',
+                '         --region=',
+                Ref('AWS::Region'),
+                '\n',
+
+                'sudo yum update -y\n',
+                'sudo yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
+                'sudo yum install -y httpd24 php70 php70-mysqlnd\n',
+                'sudo service httpd start\n',
+                'sudo chkconfig httpd on\n',
+                'chkconfig --list httpd\n',
+                'sudo usermod -a -G apache ec2-user\n',
+                'sudo chown -R ec2-user:apache /var/www\n',
+                'sudo chmod 2775 /var/www\n',
+                'find /var/www -type d -exec sudo chmod 2775 {} \;\n',
+                'find /var/www -type f -exec sudo chmod 0664 {} \;\n',
+                'yum install git -y\n',
+                'git clone https://github.com/atambol/RUBiS.git\n',
+                'export RUBIS_HOME=`readlink -f RUBiS`\n',
+                'cp -r $RUBIS_HOME/PHP/ /var/www/html/\n',
+                '/opt/aws/bin/cfn-signal -e $? ',
+                '         --stack=',
+                Ref('AWS::StackName'),
+                '         --resource=WebServerInstance',
+                '         --region=',
+                Ref('AWS::Region'),
+                '\n',
+            ])),
+    CreationPolicy=CreationPolicy(
+        ResourceSignal=ResourceSignal(
+            Count=1,
+            Timeout='PT5M')),
+    DependsOn=["PrivateDefaultRoute"],
+    Tags=Tags(
+        Name=Join("_", [Ref("AWS::StackName"), "WebServer"]))
 ))
 
 rubis_server_instance = t.add_resource(ec2.Instance(
@@ -446,7 +511,7 @@ rubis_server_instance = t.add_resource(ec2.Instance(
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
             # AssociatePublicIpAddress='true',
-            PrivateIpAddress=address['rubis_client'],
+            PrivateIpAddress=address['rubis_server'],
             DeviceIndex='0',
             DeleteOnTermination='true',
             # SubnetId=Ref(public_subnet))],
@@ -467,24 +532,13 @@ rubis_server_instance = t.add_resource(ec2.Instance(
 
                 'sudo yum update -y\n',
                 'sudo yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
-                'sudo yum install -y httpd24 php70 php70-mysqlnd\n',
-                'sudo service httpd start\n',
-                'sudo chkconfig httpd on\n',
-                'chkconfig --list httpd\n',
-                'sudo usermod -a -G apache ec2-user\n',
-                'sudo chown -R ec2-user:apache /var/www\n',
-                'sudo chmod 2775 /var/www\n',
-                'find /var/www -type d -exec sudo chmod 2775 {} \;\n',
-                'find /var/www -type f -exec sudo chmod 0664 {} \;\n',
-                '#echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php\n',
                 'yum install git -y\n',
                 'git clone https://github.com/atambol/RUBiS.git\n',
                 'yum install java-1.8.0-openjdk-devel.x86_64 -y\n',
                 'export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk"\n',
                 'export RUBIS_HOME=`readlink -f RUBiS`\n',
-                'cp -r $RUBIS_HOME/PHP/ /var/www/html/\n',
                 'cd $RUBIS_HOME/Client\n',
-                'python generateProperties.py -d ', address["db"], '\n',
+                'python generateProperties.py -d ', address["db"], ' -p ', address["web_server"], '\n',
                 'export PATH="$JAVA_HOME/bin:$PATH"\n',
                 'make client\n',
                 'make initDBSQL PARAM="all" &\n',
@@ -499,12 +553,11 @@ rubis_server_instance = t.add_resource(ec2.Instance(
     CreationPolicy=CreationPolicy(
         ResourceSignal=ResourceSignal(
             Count=1,
-            Timeout='PT10M')),
-    DependsOn=["DBInstance"],
+            Timeout='PT5M')),
+    DependsOn=["DBInstance", "WebServerInstance"],
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "RubisServer"]))
 ))
-
 #
 # rubis_client_instance = t.add_resource(ec2.Instance(
 #     'RubisClientInstance',

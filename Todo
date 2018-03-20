@@ -1,8 +1,6 @@
 Cloudformation: Harden Security group rules
 
-Rubis:  identify installation steps
-        create cookbook
-        add metrics cron
+Rubis:  controling the parameters of rubis
         
 Kafka:  Add instance
         Configure kafka - topic, producer ..

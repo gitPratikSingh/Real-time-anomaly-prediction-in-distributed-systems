@@ -4,4 +4,9 @@ Rubis:  controling the parameters of rubis
         
 Kafka:  Add instance
         Configure kafka - topic, producer ..
-        
+
+
+
+echo "* * * * * python %RUBIS_HOME/metrics/metrics.py" >> mycron
+crontab mycron
+rm mycron

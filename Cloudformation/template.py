@@ -24,7 +24,6 @@ address = {
     "public_subnet_cidr": '172.25.0.0/17',
     "private_subnet_cidr": '172.25.128.0/17',
     "nat": '172.25.0.5',
-    "rubis_server": "172.25.130.5",
     "rubis_client": "172.25.130.6",
     "db": '172.25.130.7',
     # "web_server": '172.25.0.8',
@@ -33,7 +32,6 @@ address = {
 
 ami_ids = {
     "nat": "ami-f27b5a97",
-    "rubis_server": "ami-ab1a31ce",
     "rubis_client": "ami-ab1a31ce",
     "db": "ami-ab1a31ce",
     "web_server": "ami-ab1a31ce",
@@ -500,18 +498,18 @@ web_server_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "WebServer"]))
 ))
 
-rubis_server_instance = t.add_resource(ec2.Instance(
-    'RubisServerInstance',
-    ImageId=ami_ids["rubis_server"],
+rubis_client_instance = t.add_resource(ec2.Instance(
+    'RubisClientInstance',
+    ImageId=ami_ids["rubis_client"],
     InstanceType="t2.micro",
-    Metadata=get_instance_metadata("RubisServerInstance"),
+    Metadata=get_instance_metadata("RubisClientInstance"),
     KeyName=keyname,
     SourceDestCheck='true',
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
             # AssociatePublicIpAddress='true',
-            PrivateIpAddress=address['rubis_server'],
+            PrivateIpAddress=address['rubis_client'],
             DeviceIndex='0',
             DeleteOnTermination='true',
             # SubnetId=Ref(public_subnet))],
@@ -525,7 +523,7 @@ rubis_server_instance = t.add_resource(ec2.Instance(
                 '/opt/aws/bin/cfn-init -v ',
                 '         --stack=',
                 Ref('AWS::StackName'),
-                '         --resource=RubisServerInstance',
+                '         --resource=RubisClientInstance',
                 '         --region=',
                 Ref('AWS::Region'),
                 '\n',
@@ -545,7 +543,7 @@ rubis_server_instance = t.add_resource(ec2.Instance(
                 '/opt/aws/bin/cfn-signal -e $? ',
                 '         --stack=',
                 Ref('AWS::StackName'),
-                '         --resource=RubisServerInstance',
+                '         --resource=RubisClientInstance',
                 '         --region=',
                 Ref('AWS::Region'),
                 '\n',
@@ -556,79 +554,8 @@ rubis_server_instance = t.add_resource(ec2.Instance(
             Timeout='PT5M')),
     DependsOn=["DBInstance", "WebServerInstance"],
     Tags=Tags(
-        Name=Join("_", [Ref("AWS::StackName"), "RubisServer"]))
+        Name=Join("_", [Ref("AWS::StackName"), "RubisClient"]))
 ))
-#
-# rubis_client_instance = t.add_resource(ec2.Instance(
-#     'RubisClientInstance',
-#     ImageId=ami_ids["rubis_client"],
-#     InstanceType="t2.micro",
-#     Metadata=get_instance_metadata("RubisClientInstance"),
-#     KeyName=keyname,
-#     SourceDestCheck='true',
-#     NetworkInterfaces=[
-#         ec2.NetworkInterfaceProperty(
-#             GroupSet=[Ref(instance_security_group)],
-#             AssociatePublicIpAddress='true',
-#             # PrivateIpAddress=address['rubis_client'],
-#             DeviceIndex='0',
-#             DeleteOnTermination='true',
-#             SubnetId=Ref(public_subnet))],
-#             # SubnetId=Ref(private_subnet))],
-#     UserData=Base64(
-#         Join(
-#             '',
-#             [
-#                 '#!/bin/bash -xe\n',
-#                 'yum update -y aws-cfn-bootstrap\n',
-#                 '/opt/aws/bin/cfn-init -v ',
-#                 '         --stack=',
-#                 Ref('AWS::StackName'),
-#                 '         --resource=RubisClientInstance',
-#                 '         --region=',
-#                 Ref('AWS::Region'),
-#                 '\n',
-#
-#                 'sudo yum update -y\n',
-#                 'sudo yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
-#                 'sudo yum install -y httpd24 php70 mysql56-server php70-mysqlnd\n',
-#                 'sudo service httpd start\n',
-#                 'sudo chkconfig httpd on\n',
-#                 'chkconfig --list httpd\n',
-#                 'sudo usermod -a -G apache ec2-user\n',
-#                 'sudo chown -R ec2-user:apache /var/www\n',
-#                 'sudo chmod 2775 /var/www\n',
-#                 'find /var/www -type d -exec sudo chmod 2775 {} \;\n',
-#                 'find /var/www -type f -exec sudo chmod 0664 {} \;\n',
-#                 '#echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php\n',
-#                 'sudo service mysqld start\n',
-#                 'sudo mysql_secure_installation << EOL1\n',
-#                 '\n',
-#                 'n\n',
-#                 'Y\n',
-#                 'Y\n',
-#                 'Y\n',
-#                 'Y\n',
-#                 'EOL1\n',
-#                 'sudo chkconfig mysqld on\n',
-#
-#                 '/opt/aws/bin/cfn-signal -e $? ',
-#                 '         --stack=',
-#                 Ref('AWS::StackName'),
-#                 '         --resource=RubisClientInstance',
-#                 '         --region=',
-#                 Ref('AWS::Region'),
-#                 '\n',
-#             ])),
-#     CreationPolicy=CreationPolicy(
-#         ResourceSignal=ResourceSignal(
-#             Count=1,
-#             Timeout='PT5M')),
-#     DependsOn=["DBInstance"],
-#     Tags=Tags(
-#         Name=Join("_", [Ref("AWS::StackName"), "RubisClient"]))
-# ))
-#
 
 # Generate a template
 with open(template_file, "w") as f:

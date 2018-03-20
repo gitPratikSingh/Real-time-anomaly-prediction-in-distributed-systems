@@ -112,3 +112,11 @@ http://www-tandfonline-com.prox.lib.ncsu.edu/doi/abs/10.1080/07474938.2010.48155
     * [Optimizing CFN templates](https://aws.amazon.com/blogs/devops/optimize-aws-cloudformation-templates/)
     * [LAMP stack installation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-LAMP.html)
                 
+
+#### RUBiS
+
+* [RUBiS Repository](https://github.com/atambol/RUBiS)
+* Current installation creates three instance for RUBiS: 
+    * Rubis Client
+    * DB Server
+    * Web Server

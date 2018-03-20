@@ -1,12 +1,7 @@
 Cloudformation: Harden Security group rules
 
-Rubis:  controling the parameters of rubis
+Rubis:  controlling the parameters in rubis.properties
         
 Kafka:  Add instance
         Configure kafka - topic, producer ..
 
-
-
-echo "* * * * * python %RUBIS_HOME/metrics/metrics.py" >> mycron
-crontab mycron
-rm mycron

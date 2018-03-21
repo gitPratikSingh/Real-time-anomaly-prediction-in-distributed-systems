@@ -240,6 +240,7 @@ nat_instance = t.add_resource(ec2.Instance(
                 'chown ec2-user.ec2-user /home/ec2-user/.ssh/724_keypair.pem\n',
 
                 "# Configure iptables\n",
+                "/sbin/iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination 172.25.130.8:80\n",
                 "/sbin/iptables -t nat -A POSTROUTING -o eth0 -s 0.0.0.0/0 -j MASQUERADE\n",
                 "/sbin/iptables-save > /etc/sysconfig/iptables\n",
                 "# Configure ip forwarding and redirects\n",
@@ -250,6 +251,21 @@ nat_instance = t.add_resource(ec2.Instance(
                 "net.ipv4.conf.eth0.send_redirects = 0\n",
                 "EOF\n",
                 "sysctl -p /etc/sysctl.d/nat.conf\n",
+
+                'yum update -y\n',
+                'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
+                'yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n',
+                'pip install psutil\n',
+                'git clone https://github.com/atambol/RUBiS.git\n',
+                'export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk"\n',
+                'export RUBIS_HOME=`readlink -f RUBiS`\n',
+                'cd $RUBIS_HOME/Client\n',
+                'python generateProperties.py -d ', address["db"], ' -p ', address["web_server"], '\n',
+                'export PATH="$JAVA_HOME/bin:$PATH"\n',
+                'echo "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"" >> /etc/environment\n',
+                'echo "export PATH=\"$JAVA_HOME/bin:$PATH\"" >> /etc/environment\n',
+                '#make client\n',
+                '#make initDBSQL PARAM="all" &\n',
 
                 '/opt/aws/bin/cfn-init -v ',
                 '         --stack=',
@@ -375,11 +391,9 @@ db_instance = t.add_resource(ec2.Instance(
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
-            # AssociatePublicIpAddress='true',
             PrivateIpAddress=address['db'],
             DeviceIndex='0',
             DeleteOnTermination='true',
-            # SubnetId=Ref(public_subnet))],
             SubnetId=Ref(private_subnet))],
     UserData=Base64(
         Join(
@@ -449,11 +463,9 @@ web_server_instance = t.add_resource(ec2.Instance(
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
-            # AssociatePublicIpAddress='true',
             PrivateIpAddress=address['web_server'],
             DeviceIndex='0',
             DeleteOnTermination='true',
-            # SubnetId=Ref(public_subnet))],
             SubnetId=Ref(private_subnet))],
     UserData=Base64(
         Join(
@@ -502,68 +514,6 @@ web_server_instance = t.add_resource(ec2.Instance(
     DependsOn=["PrivateDefaultRoute"],
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "WebServer"]))
-))
-
-rubis_client_instance = t.add_resource(ec2.Instance(
-    'RubisClientInstance',
-    ImageId=ami_ids["rubis_client"],
-    InstanceType="t2.micro",
-    Metadata=get_instance_metadata("RubisClientInstance"),
-    KeyName=keyname,
-    SourceDestCheck='true',
-    NetworkInterfaces=[
-        ec2.NetworkInterfaceProperty(
-            GroupSet=[Ref(instance_security_group)],
-            # AssociatePublicIpAddress='true',
-            PrivateIpAddress=address['rubis_client'],
-            DeviceIndex='0',
-            DeleteOnTermination='true',
-            # SubnetId=Ref(public_subnet))],
-            SubnetId=Ref(private_subnet))],
-    UserData=Base64(
-        Join(
-            '',
-            [
-                '#!/bin/bash -xe\n',
-                'yum update -y aws-cfn-bootstrap\n',
-                '/opt/aws/bin/cfn-init -v ',
-                '         --stack=',
-                Ref('AWS::StackName'),
-                '         --resource=RubisClientInstance',
-                '         --region=',
-                Ref('AWS::Region'),
-                '\n',
-
-                'yum update -y\n',
-                'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
-                'yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n',
-                'pip install psutil\n',
-                'git clone https://github.com/atambol/RUBiS.git\n',
-                'export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk"\n',
-                'export RUBIS_HOME=`readlink -f RUBiS`\n',
-                'echo "* * * * * python $RUBIS_HOME/metrics/metrics.py" >> mycron\n',
-                'crontab mycron\n',
-                'rm mycron\n',
-                'cd $RUBIS_HOME/Client\n',
-                'python generateProperties.py -d ', address["db"], ' -p ', address["web_server"], '\n',
-                'export PATH="$JAVA_HOME/bin:$PATH"\n',
-                'make client\n',
-                'make initDBSQL PARAM="all" &\n',
-                '/opt/aws/bin/cfn-signal -e $? ',
-                '         --stack=',
-                Ref('AWS::StackName'),
-                '         --resource=RubisClientInstance',
-                '         --region=',
-                Ref('AWS::Region'),
-                '\n',
-            ])),
-    CreationPolicy=CreationPolicy(
-        ResourceSignal=ResourceSignal(
-            Count=1,
-            Timeout='PT5M')),
-    DependsOn=["DBInstance", "WebServerInstance"],
-    Tags=Tags(
-        Name=Join("_", [Ref("AWS::StackName"), "RubisClient"]))
 ))
 
 # Generate a template

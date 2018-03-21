@@ -120,3 +120,4 @@ http://www-tandfonline-com.prox.lib.ncsu.edu/doi/abs/10.1080/07474938.2010.48155
     * Rubis Client
     * DB Server
     * Web Server
+* Rubis Web Server UI: http://<NAT's Public IP>:8080/PHP/index.html

@@ -185,7 +185,7 @@ def createNetwork(dataSource):
                         # A comma separated list of the number of steps the
                         # classifier predicts in the future. The classifier will
                         # learn predictions of each order specified.
-                        'steps': '1',
+                        'steps': '1,2',#,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, 21,22,23,24,25,26,27,28,29,30',
 
                         # The specific implementation of the classifier to use
                         # See SDRClassifierFactory#create for options
@@ -261,17 +261,18 @@ def run(network):
     """actual = json.loads(jsonData)["cpu_metric"]"""
     
     actual = float(sensorRegion.getOutputData("actValueOut")[0])
-
-    l1Predictions = l1Classifier.getOutputData("actualValues")
-    l1Probabilities = l1Classifier.getOutputData("probabilities")
-    l1Prediction = l1Predictions[l1Probabilities.argmax()]
+    l1Result = getPredictionResults(l1Classifier)
+    steps = l1Classifier.getSelf().stepsList
+    
+    l1Prediction = l1Result[steps[0]]["predictedValue"]     
     if l1PreviousPrediction is not None:
-        l1ErrorSum += math.fabs(l1PreviousPrediction - actual)
+            l1ErrorSum += math.fabs(l1PreviousPrediction - actual)
+    
     l1PreviousPrediction = l1Prediction
 
-    l2Predictions = l2Classifier.getOutputData("actualValues")
-    l2Probabilities = l2Classifier.getOutputData("probabilities")
-    l2Prediction = l2Predictions[l2Probabilities.argmax()]
+    l2Result = getPredictionResults(l2Classifier)
+    l2Prediction = l2Result[steps[0]]["predictedValue"]
+    
     if l2PreviousPrediction is not None:
         l2ErrorSum += math.fabs(l2PreviousPrediction - actual)
     l2PreviousPrediction = l2Prediction
@@ -282,7 +283,11 @@ def run(network):
     # Write record number, actualInput, and anomaly scores
     # writer.writerow((record, actual, l1PreviousPrediction, l1AnomalyScore, l2PreviousPrediction, l2AnomalyScore))
 
-    print("record="+ str(numRecords) + ", actual=" + str(actual) + "l1PreviousPrediction" + str(l1PreviousPrediction) + ", l2PreviousPrediction"+ str(l2PreviousPrediction))
+    print("record="+ str(numRecords) + ", actual=" + str(actual) + "l1PreviousPrediction" + str(l1PreviousPrediction) + "l2PreviousPrediction"+ str(l2PreviousPrediction))
+
+    for i in range(len(steps)):
+        print("Step"+ str(steps[i]) +": l1Prediction" + str(l1Result[steps[i]]["predictedValue"] ) + ", l2Prediction"+ str(l2Result[steps[i]]["predictedValue"] ))
+
 
     # Store the predicted columns for the next timestep
     l1PredictedColumns = l1TpRegion.getOutputData("topDownOut").nonzero()[0]
@@ -296,6 +301,26 @@ def run(network):
         print("L1 ave abs class. error: %f" % (l1ErrorSum / (numRecords - 1)))
         print("L2 ave abs class. error: %f" % (l2ErrorSum / (numRecords - 1)))
     
+
+def getPredictionResults(classifierRegion):
+    """Helper function to extract results for all prediction steps."""
+    
+    actualValues = classifierRegion.getOutputData("actualValues")
+    probabilities = classifierRegion.getOutputData("probabilities")
+    steps = classifierRegion.getSelf().stepsList
+
+    N = classifierRegion.getSelf().maxCategoryCount
+    results = {step: {} for step in steps}
+    for i in range(len(steps)):
+        # stepProbabilities are probabilities for this prediction step only.
+        stepProbabilities = probabilities[i * N:(i + 1) * N - 1]
+        mostLikelyCategoryIdx = stepProbabilities.argmax()
+        predictedValue = actualValues[mostLikelyCategoryIdx]
+        predictionConfidence = stepProbabilities[mostLikelyCategoryIdx]
+        results[steps[i]]["predictedValue"] = predictedValue
+        results[steps[i]]["predictionConfidence"] = predictionConfidence
+    return results
+
 
 def runNetwork(network, numRecords, dataSource):
     flag =1;

@@ -261,17 +261,17 @@ def run(network):
     """actual = json.loads(jsonData)["cpu_metric"]"""
     
     actual = float(sensorRegion.getOutputData("actValueOut")[0])
-    l1Result = getPredictionResults(l1Classifier)
+    l1Result, l1ResultConf = getPredictionResults(l1Classifier)
     steps = l1Classifier.getSelf().stepsList
     
-    l1Prediction = l1Result[steps[0]]["predictedValue"]     
+    l1Prediction = l1Result[0]     
     if l1PreviousPrediction is not None:
             l1ErrorSum += math.fabs(l1PreviousPrediction - actual)
     
     l1PreviousPrediction = l1Prediction
 
-    l2Result = getPredictionResults(l2Classifier)
-    l2Prediction = l2Result[steps[0]]["predictedValue"]
+    l2Result, l2ResultConf = getPredictionResults(l2Classifier)
+    l2Prediction = l2Result[0]
     
     if l2PreviousPrediction is not None:
         l2ErrorSum += math.fabs(l2PreviousPrediction - actual)
@@ -286,7 +286,7 @@ def run(network):
     print("record="+ str(numRecords) + ", actual=" + str(actual) + "l1PreviousPrediction" + str(l1PreviousPrediction) + "l2PreviousPrediction"+ str(l2PreviousPrediction))
 
     for i in range(len(steps)):
-        print("Step"+ str(steps[i]) +": l1Prediction" + str(l1Result[steps[i]]["predictedValue"] ) + ", l2Prediction"+ str(l2Result[steps[i]]["predictedValue"] ))
+        print("Step"+ str(steps[i]) +": l1Prediction" + str(l1Result[i]) + ", l2Prediction"+ str(l2Result[i]))
 
 
     # Store the predicted columns for the next timestep
@@ -310,16 +310,17 @@ def getPredictionResults(classifierRegion):
     steps = classifierRegion.getSelf().stepsList
 
     N = classifierRegion.getSelf().maxCategoryCount
-    results = {step: {} for step in steps}
+    results = []
+    confidence = []
     for i in range(len(steps)):
         # stepProbabilities are probabilities for this prediction step only.
         stepProbabilities = probabilities[i * N:(i + 1) * N - 1]
         mostLikelyCategoryIdx = stepProbabilities.argmax()
         predictedValue = actualValues[mostLikelyCategoryIdx]
         predictionConfidence = stepProbabilities[mostLikelyCategoryIdx]
-        results[steps[i]]["predictedValue"] = predictedValue
-        results[steps[i]]["predictionConfidence"] = predictionConfidence
-    return results
+        results.append(predictedValue)
+        confidence.append(predictionConfidence)
+    return results, confidence
 
 
 def runNetwork(network, numRecords, dataSource):

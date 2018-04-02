@@ -26,7 +26,7 @@ address = {
     "nat": '172.25.0.5',
     "db": '172.25.130.7',
     "web_server": '172.25.130.8',
-    "kafka": '172.25.0.9',
+    "kafka": '172.25.130.9',
 }
 
 ami_ids = {
@@ -267,6 +267,12 @@ nat_instance = t.add_resource(ec2.Instance(
                 '#make client\n',
                 '#make initDBSQL PARAM="all" &\n',
 
+                #'cat /dev/zero | ssh-keygen -q -N ""\n',
+                #'cat /home/ec2-user/.ssh/id_rsa.pub | ssh -i .ssh/724_keypair.pem ec2-user@172.25.130.9 "cat >> /home/ec2-user/.ssh/authorized_keys"\n',
+                #'cat /home/ec2-user/.ssh/id_rsa.pub | ssh -i .ssh/724_keypair.pem ec2-user@172.25.130.8 "cat >> /home/ec2-user/.ssh/authorized_keys"\n',
+                #'cat /home/ec2-user/.ssh/id_rsa.pub | ssh -i .ssh/724_keypair.pem ec2-user@172.25.130.7 "cat >> /home/ec2-user/.ssh/authorized_keys"\n',
+                #'rm .ssh/724_keypair.pem\n',
+
                 '/opt/aws/bin/cfn-init -v ',
                 '         --stack=',
                 Ref('AWS::StackName'),
@@ -412,7 +418,7 @@ kafka_instance = t.add_resource(ec2.Instance(
                 'yum update -y\n',
                 'yum install docker -y\n',
                 'service docker start\n',
-                #'sudo docker run --rm -it -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -e ADV_HOST=' + address['kafka'] + 'landoop/fast-data-dev\n',
+                #'sudo docker run --rm -it -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -e ADV_HOST=172.25.130.9 landoop/fast-data-dev\n',
                 '/opt/aws/bin/cfn-signal -e $? ',
                 '         --stack=',
                 Ref('AWS::StackName'),

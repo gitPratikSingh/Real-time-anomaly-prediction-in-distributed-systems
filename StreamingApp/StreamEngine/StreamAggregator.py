@@ -116,11 +116,10 @@ class FuncThread(threading.Thread):
 def main():
     interval_length = 10
     bootstrap_servers = '172.25.130.9:9092'
-    cpu_time_aggregator(bootstrap_servers, interval_length)
-    # response_time_aggregator(bootstrap_servers, interval_length)
-    # t1 = FuncThread(cpu_time_aggregator, bootstrap_servers, interval_length)
-    # t1.setDaemon(True)
-    # t1.start()
+    t1 = FuncThread(cpu_time_aggregator, bootstrap_servers, interval_length)
+    t1.setDaemon(True)
+    t1.start()
+    response_time_aggregator(bootstrap_servers, interval_length)
 
 
 if __name__ == "__main__":

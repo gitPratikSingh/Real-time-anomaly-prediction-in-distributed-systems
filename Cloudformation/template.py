@@ -481,8 +481,8 @@ for i in range(1, 4):
 
                     'yum update -y\n',
                     'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
-                    'yum install -y mysql56-server php70-mysqlnd gcc git\n',
-                    'pip install psutil kafka-python\n',
+                    'yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n',
+                    'pip install psutil\n',
                     'git clone https://github.com/atambol/RUBiS.git\n',
                     'export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk"\n',
                     'export RUBIS_HOME=`readlink -f RUBiS`\n',
@@ -491,8 +491,9 @@ for i in range(1, 4):
                     'export PATH="$JAVA_HOME/bin:$PATH"\n',
                     'echo "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"" >> /etc/environment\n',
                     'echo "export PATH=\"$JAVA_HOME/bin:$PATH\"" >> /etc/environment\n',
-                    #'make client\n',
-                    #'make initDBSQL PARAM="all" &\n',
+                    'chown ec2-user.ec2-user /RUBiS -R\n',
+                    'make client\n',
+                    'make emulator &\n',
 
                     '/opt/aws/bin/cfn-signal -e $? ',
                     '         --stack=',

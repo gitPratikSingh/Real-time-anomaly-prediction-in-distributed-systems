@@ -51,3 +51,6 @@ Objective: Implement FCHAIN/UBL/PREPARE & try to reduce time for any of the abov
     * DB Server
     * Web Server
 * Rubis Web Server UI: http://<NAT's Public IP>:8080/PHP/index.html
+
+#### Kafka
+* Kafka Broker UI: http://<NAT's Public IP>:3030

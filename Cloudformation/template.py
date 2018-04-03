@@ -19,23 +19,33 @@ hostname = socket.gethostname()
 region = 'us-east-2'
 availability_zone = region + 'b'
 description = "724 stack created by {} at {}".format(hostname, epoch_time)
+cidrs = {
+    "vpc": '172.25.0.0/16',
+    "public_subnet": '172.25.0.0/17',
+    "private_subnet": '172.25.128.0/17',
+}
+
 address = {
-    "vpc_cidr": '172.25.0.0/16',
-    "public_subnet_cidr": '172.25.0.0/17',
-    "private_subnet_cidr": '172.25.128.0/17',
     "nat": '172.25.0.5',
     "db": '172.25.130.7',
     "web_server": '172.25.130.8',
     "kafka": '172.25.130.9',
+    "rubis_client1": '172.25.130.10',
+    "rubis_client2": '172.25.130.11',
+    "rubis_client3": '172.25.130.12',
 }
 
 ami_ids = {
     "nat": "ami-f27b5a97",
-    "rubis_client": "ami-ab1a31ce",
+    "rubis_client1": "ami-ab1a31ce",
+    "rubis_client2": "ami-ab1a31ce",
+    "rubis_client3": "ami-ab1a31ce",
     "db": "ami-ab1a31ce",
     "kafka": "ami-ab1a31ce",
     "web_server": "ami-ab1a31ce",
 }
+
+ssh_prfx = 'cat /home/ec2-user/.ssh/id_rsa.pub | ssh -o StrictHostKeyChecking=no -i .ssh/' + keyname + '.pem ec2-user@'
 
 t = Template()
 t.add_version("2010-09-09")
@@ -44,7 +54,7 @@ t.add_description(description)
 
 vpc_cidr = t.add_parameter(Parameter(
     'VPCCIDR',
-    Default=address['vpc_cidr'],
+    Default=cidrs['vpc'],
     Description='The IP address space for this VPC, in CIDR notation',
     Type='String',
 ))
@@ -53,14 +63,14 @@ public_subnet_cidr = t.add_parameter(Parameter(
     'PublicSubnetCidr',
     Type='String',
     Description='Public Subnet CIDR',
-    Default=address['public_subnet_cidr']
+    Default=cidrs['public_subnet']
 ))
 
 private_subnet_cidr = t.add_parameter(Parameter(
     'PrivateSubnetCidr',
     Type='String',
     Description='Private Subnet CIDR',
-    Default=address['private_subnet_cidr']
+    Default=cidrs['private_subnet']
 ))
 
 vpc = t.add_resource(ec2.VPC(
@@ -213,6 +223,7 @@ nat_instance_metadata = autoscaling.Metadata(
                             '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
                         ])})})}))
 
+
 nat_instance = t.add_resource(ec2.Instance(
     'NatInstance',
     ImageId=ami_ids["nat"],
@@ -235,12 +246,21 @@ nat_instance = t.add_resource(ec2.Instance(
             [
                 '#!/bin/bash -xe\n',
                 'yum update -y aws-cfn-bootstrap\n',
-                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/724_keypair.pem /home/ec2-user/.ssh/724_keypair.pem\n',
-                'chmod 400 /home/ec2-user/.ssh/724_keypair.pem\n',
-                'chown ec2-user.ec2-user /home/ec2-user/.ssh/724_keypair.pem\n',
+                '/opt/aws/bin/cfn-init -v ',
+                '         --stack=',
+                Ref('AWS::StackName'),
+                '         --resource=NatInstance',
+                '         --region=',
+                Ref('AWS::Region'),
+                '\n',
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/nat /home/ec2-user/.ssh/id_rsa\n',
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/nat.pub /home/ec2-user/.ssh/id_rsa.pub\n',
+                'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+                'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
 
                 "# Configure iptables\n",
-                "/sbin/iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination 172.25.130.8:80\n",
+                "/sbin/iptables -t nat -A PREROUTING -p tcp --dport 3030 -j DNAT --to-destination " + address["kafka"] + ":3030\n",
+                "/sbin/iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination " + address["web_server"] + ":80\n",
                 "/sbin/iptables -t nat -A POSTROUTING -o eth0 -s 0.0.0.0/0 -j MASQUERADE\n",
                 "/sbin/iptables-save > /etc/sysconfig/iptables\n",
                 "# Configure ip forwarding and redirects\n",
@@ -252,34 +272,10 @@ nat_instance = t.add_resource(ec2.Instance(
                 "EOF\n",
                 "sysctl -p /etc/sysctl.d/nat.conf\n",
 
-                'yum update -y\n',
-                'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
-                'yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n',
-                'pip install psutil\n',
-                'git clone https://github.com/atambol/RUBiS.git\n',
-                'export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk"\n',
-                'export RUBIS_HOME=`readlink -f RUBiS`\n',
-                'cd $RUBIS_HOME/Client\n',
-                'python generateProperties.py -d ', address["db"], ' -p ', address["web_server"], '\n',
-                'export PATH="$JAVA_HOME/bin:$PATH"\n',
-                'echo "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"" >> /etc/environment\n',
-                'echo "export PATH=\"$JAVA_HOME/bin:$PATH\"" >> /etc/environment\n',
-                '#make client\n',
-                '#make initDBSQL PARAM="all" &\n',
-
-                #'cat /dev/zero | ssh-keygen -q -N ""\n',
-                #'cat /home/ec2-user/.ssh/id_rsa.pub | ssh -i .ssh/724_keypair.pem ec2-user@172.25.130.9 "cat >> /home/ec2-user/.ssh/authorized_keys"\n',
-                #'cat /home/ec2-user/.ssh/id_rsa.pub | ssh -i .ssh/724_keypair.pem ec2-user@172.25.130.8 "cat >> /home/ec2-user/.ssh/authorized_keys"\n',
-                #'cat /home/ec2-user/.ssh/id_rsa.pub | ssh -i .ssh/724_keypair.pem ec2-user@172.25.130.7 "cat >> /home/ec2-user/.ssh/authorized_keys"\n',
-                #'rm .ssh/724_keypair.pem\n',
-
-                '/opt/aws/bin/cfn-init -v ',
-                '         --stack=',
-                Ref('AWS::StackName'),
-                '         --resource=NatInstance',
-                '         --region=',
-                Ref('AWS::Region'),
-                '\n',
+                'pip install kafka-python\n',
+                'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/StreamAggregator.py -P /home/ec2-user\n',
+                'chown ec2-user.ec2-user /home/ec2-user/StreamAggregator.py\n',
+                'python /home/ec2-user/StreamAggregator.py & \n',
                 '/opt/aws/bin/cfn-signal -e $?',
                 '         --stack=',
                 Ref('AWS::StackName'),
@@ -394,6 +390,7 @@ kafka_instance = t.add_resource(ec2.Instance(
     Metadata=get_instance_metadata("KafkaInstance"),
     KeyName=keyname,
     SourceDestCheck='true',
+    IamInstanceProfile='NatS3Access',
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
@@ -415,10 +412,16 @@ kafka_instance = t.add_resource(ec2.Instance(
                 Ref('AWS::Region'),
                 '\n',
 
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/kafka /home/ec2-user/.ssh/id_rsa\n',
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/kafka.pub /home/ec2-user/.ssh/id_rsa.pub\n',
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
+                'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+                'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+
                 'yum update -y\n',
                 'yum install docker -y\n',
                 'service docker start\n',
-                #'sudo docker run --rm -it -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -e ADV_HOST=172.25.130.9 landoop/fast-data-dev\n',
+                'sudo docker run --rm -it -d -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -e ADV_HOST=172.25.130.9 landoop/fast-data-dev\n',
                 '/opt/aws/bin/cfn-signal -e $? ',
                 '         --stack=',
                 Ref('AWS::StackName'),
@@ -436,11 +439,84 @@ kafka_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "Kafka"]))
 ))
 
+for i in range(1, 4):
+    key = "rubis_client" + str(i)
+    instance_name = "RubisInstance" + str(i)
+    t.add_resource(ec2.Instance(
+        instance_name,
+        ImageId=ami_ids[key],
+        InstanceType="t2.micro",
+        Metadata=get_instance_metadata(instance_name),
+        KeyName=keyname,
+        SourceDestCheck='true',
+        IamInstanceProfile = 'NatS3Access',
+        NetworkInterfaces=[
+            ec2.NetworkInterfaceProperty(
+                GroupSet=[Ref(instance_security_group)],
+                PrivateIpAddress=address[key],
+                DeviceIndex='0',
+                DeleteOnTermination='true',
+                SubnetId=Ref(private_subnet))],
+        UserData=Base64(
+            Join(
+                '',
+                [
+                    '#!/bin/bash -xe\n',
+                    'yum update -y aws-cfn-bootstrap\n',
+                    '/opt/aws/bin/cfn-init -v ',
+                    '         --stack=',
+                    Ref('AWS::StackName'),
+                    '         --resource=' + instance_name,
+                    '         --region=',
+                    Ref('AWS::Region'),
+                    '\n',
+
+                    'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/rubis', i, ' /home/ec2-user/.ssh/id_rsa\n',
+                    'aws --region ', Ref('AWS::Region'),
+                    ' s3 cp s3://atambol/keys/rubis', i, ' /home/ec2-user/.ssh/id_rsa.pub\n',
+                    'aws --region ', Ref('AWS::Region'),
+                    ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
+                    'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+                    'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+
+                    'yum update -y\n',
+                    'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
+                    'yum install -y mysql56-server php70-mysqlnd gcc git\n',
+                    'pip install psutil kafka-python\n',
+                    'git clone https://github.com/atambol/RUBiS.git\n',
+                    'export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk"\n',
+                    'export RUBIS_HOME=`readlink -f RUBiS`\n',
+                    'cd $RUBIS_HOME/Client\n',
+                    'python generateProperties.py -d ', address["db"], ' -p ', address["web_server"], '\n',
+                    'export PATH="$JAVA_HOME/bin:$PATH"\n',
+                    'echo "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"" >> /etc/environment\n',
+                    'echo "export PATH=\"$JAVA_HOME/bin:$PATH\"" >> /etc/environment\n',
+                    #'make client\n',
+                    #'make initDBSQL PARAM="all" &\n',
+
+                    '/opt/aws/bin/cfn-signal -e $? ',
+                    '         --stack=',
+                    Ref('AWS::StackName'),
+                    '         --resource=' + instance_name,
+                    '         --region=',
+                    Ref('AWS::Region'),
+                    '\n',
+                ])),
+        CreationPolicy=CreationPolicy(
+            ResourceSignal=ResourceSignal(
+                Count=1,
+                Timeout='PT5M')),
+        DependsOn=["PrivateDefaultRoute"],
+        Tags=Tags(
+            Name=Join("_", [Ref("AWS::StackName"), instance_name]))
+    ))
+
 db_instance = t.add_resource(ec2.Instance(
     'DBInstance',
     ImageId=ami_ids["db"],
     InstanceType="t2.micro",
     Metadata=get_instance_metadata("DBInstance"),
+    IamInstanceProfile='NatS3Access',
     KeyName=keyname,
     SourceDestCheck='true',
     NetworkInterfaces=[
@@ -464,10 +540,18 @@ db_instance = t.add_resource(ec2.Instance(
                 Ref('AWS::Region'),
                 '\n',
 
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/db /home/ec2-user/.ssh/id_rsa\n',
+                'aws --region ', Ref('AWS::Region'),
+                ' s3 cp s3://atambol/keys/db.pub /home/ec2-user/.ssh/id_rsa.pub\n',
+                'aws --region ', Ref('AWS::Region'),
+                ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
+                'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+                'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+
                 'yum update -y\n',
                 'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
                 'yum install -y mysql56-server php70-mysqlnd gcc git\n',
-                'pip install psutil\n',
+                'pip install psutil kafka-python\n',
                 'service mysqld start\n',
                 'mysql_secure_installation << EOL\n',
                 '\n',
@@ -480,15 +564,16 @@ db_instance = t.add_resource(ec2.Instance(
                 'chkconfig mysqld on\n',
                 'git clone https://github.com/atambol/RUBiS.git\n',
                 'export RUBIS_HOME=`readlink -f RUBiS`\n',
-                'echo "* * * * * python $RUBIS_HOME/metrics/metrics.py" >> mycron\n',
-                'crontab mycron\n',
-                'rm mycron\n',
                 'cd $RUBIS_HOME/database\n',
                 'mysql -u root --execute="CREATE DATABASE rubis;"\n',
                 'mysql -u root --execute="GRANT ALL PRIVILEGES ON *.* TO \'root\'@\'%\' WITH GRANT OPTION;"\n',
                 'mysql -uroot rubis < rubis.sql\n',
                 'mysql -uroot rubis < categories.sql\n',
                 'mysql -uroot rubis < regions.sql\n',
+                'cp $RUBIS_HOME/metrics/metrics.py /home/ec2-user/metrics.py\n',
+                'chown ec2-user.ec2-user /home/ec2-user/metrics.py\n',
+                'python $RUBIS_HOME/metrics/metrics.py & \n',
+
                 '/opt/aws/bin/cfn-signal -e $? ',
                 '         --stack=',
                 Ref('AWS::StackName'),
@@ -511,6 +596,7 @@ web_server_instance = t.add_resource(ec2.Instance(
     ImageId=ami_ids["web_server"],
     InstanceType="t2.micro",
     Metadata=get_instance_metadata("WebServerInstance"),
+    IamInstanceProfile='NatS3Access',
     KeyName=keyname,
     SourceDestCheck='true',
     NetworkInterfaces=[
@@ -534,10 +620,18 @@ web_server_instance = t.add_resource(ec2.Instance(
                 Ref('AWS::Region'),
                 '\n',
 
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/web_server /home/ec2-user/.ssh/id_rsa\n',
+                'aws --region ', Ref('AWS::Region'),
+                ' s3 cp s3://atambol/keys/web_server.pub /home/ec2-user/.ssh/id_rsa.pub\n',
+                'aws --region ', Ref('AWS::Region'),
+                ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
+                'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+                'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+
                 'yum update -y\n',
                 'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
                 'yum install -y httpd24 php70 php70-mysqlnd gcc git\n',
-                'pip install psutil\n',
+                'pip install psutil kafka-python\n',
                 'service httpd start\n',
                 'chkconfig httpd on\n',
                 '#chkconfig --list httpd\n',
@@ -548,10 +642,11 @@ web_server_instance = t.add_resource(ec2.Instance(
                 'find /var/www -type f -exec sudo chmod 0664 {} \;\n',
                 'git clone https://github.com/atambol/RUBiS.git\n',
                 'export RUBIS_HOME=`readlink -f RUBiS`\n',
-                'echo "* * * * * python $RUBIS_HOME/metrics/metrics.py" >> mycron\n',
-                'crontab mycron\n',
-                'rm mycron\n',
                 'cp -r $RUBIS_HOME/PHP/ /var/www/html/\n',
+                'cp $RUBIS_HOME/metrics/metrics.py /home/ec2-user/metrics.py\n',
+                'chown ec2-user.ec2-user /home/ec2-user/metrics.py\n',
+                'python $RUBIS_HOME/metrics/metrics.py & \n',
+
                 '/opt/aws/bin/cfn-signal -e $? ',
                 '         --stack=',
                 Ref('AWS::StackName'),

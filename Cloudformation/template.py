@@ -274,7 +274,8 @@ nat_instance = t.add_resource(ec2.Instance(
 
                 'pip install kafka-python\n',
                 'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/StreamAggregator.py -P /home/ec2-user\n',
-                'chown ec2-user.ec2-user /home/ec2-user/StreamAggregator.py\n',
+                'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/DataCollector.py -P /home/ec2-user\n',
+                'chown ec2-user.ec2-user /home/ec2-user/*.py\n',
                 'python /home/ec2-user/StreamAggregator.py & \n',
                 '/opt/aws/bin/cfn-signal -e $?',
                 '         --stack=',
@@ -571,9 +572,10 @@ db_instance = t.add_resource(ec2.Instance(
                 'mysql -uroot rubis < rubis.sql\n',
                 'mysql -uroot rubis < categories.sql\n',
                 'mysql -uroot rubis < regions.sql\n',
-                'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/MetricsKafkaProducer.py -P /home/ec2-user/\n',
-                'chown ec2-user.ec2-user /home/ec2-user/MetricsKafkaProducer.py\n',
-                'python /home/ec2-user/MetricsKafkaProducer.py & \n',
+
+                # 'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/MetricsKafkaProducer.py -P /home/ec2-user/\n',
+                # 'chown ec2-user.ec2-user /home/ec2-user/MetricsKafkaProducer.py\n',
+                # 'python /home/ec2-user/MetricsKafkaProducer.py & \n',
 
                 '/opt/aws/bin/cfn-signal -e $? ',
                 '         --stack=',
@@ -644,6 +646,7 @@ web_server_instance = t.add_resource(ec2.Instance(
                 'git clone https://github.com/atambol/RUBiS.git\n',
                 'export RUBIS_HOME=`readlink -f RUBiS`\n',
                 'cp -r $RUBIS_HOME/PHP/ /var/www/html/\n',
+
                 'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/MetricsKafkaProducer.py -P /home/ec2-user/\n',
                 'chown ec2-user.ec2-user /home/ec2-user/MetricsKafkaProducer.py\n',
                 'python /home/ec2-user/MetricsKafkaProducer.py & \n',

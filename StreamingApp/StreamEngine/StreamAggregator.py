@@ -56,9 +56,10 @@ def response_time_aggregator(bootstrap_servers, interval_length):
 def cpu_time_aggregator(bootstrap_servers, interval_length):
     end_of_time = None
     msg_counter = 0
-    total_time = 0
-    consumer_topic = 'cpu'
-    producer_topic = 'ag-cpu'
+    total_cpu_time = 0
+    total_mem_time = 0
+    consumer_topic = 'stats'
+    producer_topic = 'ag-stats'
 
     while True:
         try:
@@ -73,6 +74,7 @@ def cpu_time_aggregator(bootstrap_servers, interval_length):
                         msg = message.value.split(',')
                         epoch_time = int(msg[0])
                         cpu_time = int(msg[1])
+                        mem_time = int(msg[2])
                         if not end_of_time:
                             end_of_time = ((epoch_time / 10) * 10) + interval_length
 
@@ -82,8 +84,11 @@ def cpu_time_aggregator(bootstrap_servers, interval_length):
 
                     if end_of_time < epoch_time:
                         # Process messages in this interval and produce
-                        total_time /= msg_counter
-                        future = producer.send(producer_topic, str(",".join([str(end_of_time), str(total_time)])))
+                        total_cpu_time /= msg_counter
+                        total_mem_time /= msg_counter
+                        future = producer.send(producer_topic, str(",".join([str(end_of_time),
+                                                                             str(total_cpu_time),
+                                                                             str(total_mem_time)])))
                         # Block for 'synchronous' sends
                         try:
                             future.get(timeout=10)
@@ -92,11 +97,13 @@ def cpu_time_aggregator(bootstrap_servers, interval_length):
 
                         # Initialize for next interval
                         msg_counter = 1
-                        total_time = cpu_time
+                        total_cpu_time = cpu_time
+                        total_mem_time = mem_time
                         end_of_time = ((epoch_time / 10) * 10) + interval_length
                     else:
                         msg_counter += 1
-                        total_time += cpu_time
+                        total_cpu_time += cpu_time
+                        total_mem_time += mem_time
         except kafka.errors.NoBrokersAvailable:
             pass
 

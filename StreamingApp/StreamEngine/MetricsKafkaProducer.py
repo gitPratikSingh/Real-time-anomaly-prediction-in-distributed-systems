@@ -6,7 +6,7 @@ from kafka.errors import KafkaError
 
 
 def main():
-    producer_topic = 'cpu'
+    producer_topic = 'stats'
     bootstrap_servers = '172.25.130.9:9092'
     while True:
         try:

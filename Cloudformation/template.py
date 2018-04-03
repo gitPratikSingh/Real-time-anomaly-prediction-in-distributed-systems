@@ -24,16 +24,16 @@ address = {
     "public_subnet_cidr": '172.25.0.0/17',
     "private_subnet_cidr": '172.25.128.0/17',
     "nat": '172.25.0.5',
-    "rubis_client": "172.25.130.6",
     "db": '172.25.130.7',
-    # "web_server": '172.25.0.8',
     "web_server": '172.25.130.8',
+    "kafka": '172.25.0.9',
 }
 
 ami_ids = {
     "nat": "ami-f27b5a97",
     "rubis_client": "ami-ab1a31ce",
     "db": "ami-ab1a31ce",
+    "kafka": "ami-ab1a31ce",
     "web_server": "ami-ab1a31ce",
 }
 
@@ -380,6 +380,55 @@ def get_instance_metadata(instance_name):
                                 '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
                             ])})})}))
 
+
+kafka_instance = t.add_resource(ec2.Instance(
+    'KafkaInstance',
+    ImageId=ami_ids["kafka"],
+    InstanceType="t2.large",
+    Metadata=get_instance_metadata("KafkaInstance"),
+    KeyName=keyname,
+    SourceDestCheck='true',
+    NetworkInterfaces=[
+        ec2.NetworkInterfaceProperty(
+            GroupSet=[Ref(instance_security_group)],
+            PrivateIpAddress=address['kafka'],
+            DeviceIndex='0',
+            DeleteOnTermination='true',
+            SubnetId=Ref(private_subnet))],
+    UserData=Base64(
+        Join(
+            '',
+            [
+                '#!/bin/bash -xe\n',
+                'yum update -y aws-cfn-bootstrap\n',
+                '/opt/aws/bin/cfn-init -v ',
+                '         --stack=',
+                Ref('AWS::StackName'),
+                '         --resource=KafkaInstance',
+                '         --region=',
+                Ref('AWS::Region'),
+                '\n',
+
+                'yum update -y\n',
+                'yum install docker -y\n',
+                'service docker start\n',
+                #'sudo docker run --rm -it -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -e ADV_HOST=' + address['kafka'] + 'landoop/fast-data-dev\n',
+                '/opt/aws/bin/cfn-signal -e $? ',
+                '         --stack=',
+                Ref('AWS::StackName'),
+                '         --resource=KafkaInstance',
+                '         --region=',
+                Ref('AWS::Region'),
+                '\n',
+            ])),
+    CreationPolicy=CreationPolicy(
+        ResourceSignal=ResourceSignal(
+            Count=1,
+            Timeout='PT5M')),
+    DependsOn=["PrivateDefaultRoute"],
+    Tags=Tags(
+        Name=Join("_", [Ref("AWS::StackName"), "Kafka"]))
+))
 
 db_instance = t.add_resource(ec2.Instance(
     'DBInstance',

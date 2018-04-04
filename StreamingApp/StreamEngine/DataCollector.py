@@ -7,7 +7,7 @@ def data_collector(bootstrap_servers, topic, csv_file):
                              auto_offset_reset='earliest',
                              bootstrap_servers=[bootstrap_servers])
 
-    with open(csv_file, 'w') as f:
+    with open(csv_file, 'w', 1) as f:
         for message in consumer:
             try:
                 f.write(message.value + '\n')

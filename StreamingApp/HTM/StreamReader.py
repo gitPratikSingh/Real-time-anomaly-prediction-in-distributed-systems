@@ -17,33 +17,13 @@ from nupic.data.utils import (intOrNone, floatOrNone, parseBool, parseTimestamp,
     serializeTimestamp, serializeTimestampNoMS, escape, unescape, parseSdr,
     serializeSdr, parseStringList, stripList)
 
-
+# set this field before calling the nextRecordMethod/network.run method
+data =0
+mem =0
 
 class kafkaRecordStream(RecordStreamIface):
   """
-  CSV file based RecordStream implementation
-
-  Each field is a 3-tuple (``name``, ``type``, ``special`` or
-  :class:`~.fieldmeta.FieldMetaSpecial`.none)
-
-  The name is the name of the field. The type is one of the constants in
-  :class:`~.fieldmeta.FieldMetaType`. The special is one of the
-  :class:`~.fieldmeta.FieldMetaSpecial` values that designate their field as the
-  sequenceId, reset, timestamp, or category. With exception of multiple
-  categories, there can be at most one of each. There may be multiple fields of
-  type datetime, but no more than one of them may be the timestamp field
-  (:class:`~.fieldmeta.FieldMetaSpecial`.timestamp). The sequence id
-  field must be either a string or an int. The reset field must be an int (and
-  must contain 0 or 1).
-
-  The category field must be an int or space-separated list of ints, where
-  the former represents single-label classification and the latter is for
-  multi-label classification (e.g. "1 3 4" designates a record for labels 1,
-  3, and 4). The number of categories is allowed to vary record to record;
-  sensor regions represent non-categories with -1, thus the category values
-  must be >= 0.
-
-  The FileRecordStream iterates over the field names, types and specials and
+  The kafkaRecordStream iterates over the field names, types and specials and
   stores the information.
 
   :param streamID:
@@ -82,7 +62,7 @@ class kafkaRecordStream(RecordStreamIface):
 
 
   def __init__(self, streamName, write=False, fields=None, missingValues=None,
-               bookmark=None, includeMS=True, firstRecord=None):
+               bookmark=None, includeMS=True, firstRecord=None, names=None):
     super(kafkaRecordStream, self).__init__()
 
     # Only bookmark or firstRow can be specified, not both
@@ -104,9 +84,15 @@ class kafkaRecordStream(RecordStreamIface):
     specials.append('')
     types = []
     types.append('float')
-    names = []
-    names.append('cpu')
-    # We can't guarantee what system files are coming from, use universal
+    
+    if names is None:
+	  names = []
+	  names.append('cpu')
+    elif len(names)==2:
+	  specials.append('')
+	  types.append('float')
+	
+	# We can't guarantee what system files are coming from, use universal
     # newlines
     self._fields = [FieldMetaInfo(*attrs)
                     for attrs in zip(names, types, specials)]
@@ -156,8 +142,6 @@ class kafkaRecordStream(RecordStreamIface):
   def __getstate__(self):
     d = dict()
     d.update(self.__dict__)
-    del d['_reader']
-    del d['_file']
     return d
 
 
@@ -167,7 +151,15 @@ class kafkaRecordStream(RecordStreamIface):
     self._reader = None
     self.rewind()
 
+  def printData(self):
+    print("Data:" +str(data))
 
+  def setData(self, dataRec, memRec=None):
+	global data
+	global mem
+	data = dataRec
+	mem = memRec
+	
   def close(self):
     """
     Closes the stream.
@@ -185,20 +177,15 @@ class kafkaRecordStream(RecordStreamIface):
     self._recordCount = 0
 
   def grabStreamData(self):
-    line = []
-    
-    cpu = 100
-    
-    if self._recordCount %3==0:
-        cpu = 100
-    if self._recordCount%3==1:
-        cpu = 75
-    if self._recordCount%3==2:
-        cpu = 50
-        
-            
-    line.append(cpu)
-    return line
+	line = []
+	global data
+	global mem
+	#print("grabStreamData Called: "+str(data))
+	line.append(data)
+	if mem is not None:
+		line.append(mem)
+		
+	return line
   
   def getNextRecord(self, useCache=True):
     """ Returns next available data record from the file.

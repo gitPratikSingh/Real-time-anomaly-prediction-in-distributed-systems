@@ -33,6 +33,7 @@ address = {
     "rubis_client1": '172.25.130.10',
     "rubis_client2": '172.25.130.11',
     "rubis_client3": '172.25.130.12',
+    "htm_engine": '172.25.130.13'
 }
 
 ami_ids = {
@@ -43,9 +44,8 @@ ami_ids = {
     "db": "ami-ab1a31ce",
     "kafka": "ami-ab1a31ce",
     "web_server": "ami-ab1a31ce",
+    "htm_engine": "ami-ab1a31ce",
 }
-
-ssh_prfx = 'cat /home/ec2-user/.ssh/id_rsa.pub | ssh -o StrictHostKeyChecking=no -i .ssh/' + keyname + '.pem ec2-user@'
 
 t = Template()
 t.add_version("2010-09-09")
@@ -222,7 +222,6 @@ nat_instance_metadata = autoscaling.Metadata(
                             '/etc/cfn/cfn-hup.conf',
                             '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
                         ])})})}))
-
 
 nat_instance = t.add_resource(ec2.Instance(
     'NatInstance',
@@ -440,83 +439,10 @@ kafka_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "Kafka"]))
 ))
 
-for i in range(1, 4):
-    key = "rubis_client" + str(i)
-    instance_name = "RubisInstance" + str(i)
-    t.add_resource(ec2.Instance(
-        instance_name,
-        ImageId=ami_ids[key],
-        InstanceType="t2.micro",
-        Metadata=get_instance_metadata(instance_name),
-        KeyName=keyname,
-        SourceDestCheck='true',
-        IamInstanceProfile = 'NatS3Access',
-        NetworkInterfaces=[
-            ec2.NetworkInterfaceProperty(
-                GroupSet=[Ref(instance_security_group)],
-                PrivateIpAddress=address[key],
-                DeviceIndex='0',
-                DeleteOnTermination='true',
-                SubnetId=Ref(private_subnet))],
-        UserData=Base64(
-            Join(
-                '',
-                [
-                    '#!/bin/bash -xe\n',
-                    'yum update -y aws-cfn-bootstrap\n',
-                    '/opt/aws/bin/cfn-init -v ',
-                    '         --stack=',
-                    Ref('AWS::StackName'),
-                    '         --resource=' + instance_name,
-                    '         --region=',
-                    Ref('AWS::Region'),
-                    '\n',
-
-                    'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/rubis', i, ' /home/ec2-user/.ssh/id_rsa\n',
-                    'aws --region ', Ref('AWS::Region'),
-                    ' s3 cp s3://atambol/keys/rubis', i, ' /home/ec2-user/.ssh/id_rsa.pub\n',
-                    'aws --region ', Ref('AWS::Region'),
-                    ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
-                    'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
-                    'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
-
-                    'yum update -y\n',
-                    'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
-                    'yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n',
-                    'pip install psutil\n',
-                    'git clone https://github.com/atambol/RUBiS.git\n',
-                    'export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk"\n',
-                    'export RUBIS_HOME=`readlink -f RUBiS`\n',
-                    'cd $RUBIS_HOME/Client\n',
-                    'python generateProperties.py -d ', address["db"], ' -p ', address["web_server"], '\n',
-                    'export PATH="$JAVA_HOME/bin:$PATH"\n',
-                    'echo "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"" >> /etc/environment\n',
-                    'echo "export PATH=\"$JAVA_HOME/bin:$PATH\"" >> /etc/environment\n',
-                    'chown ec2-user.ec2-user /RUBiS -R\n',
-                    'make client\n',
-                    'make emulator &\n',
-
-                    '/opt/aws/bin/cfn-signal -e $? ',
-                    '         --stack=',
-                    Ref('AWS::StackName'),
-                    '         --resource=' + instance_name,
-                    '         --region=',
-                    Ref('AWS::Region'),
-                    '\n',
-                ])),
-        CreationPolicy=CreationPolicy(
-            ResourceSignal=ResourceSignal(
-                Count=1,
-                Timeout='PT5M')),
-        DependsOn=["PrivateDefaultRoute"],
-        Tags=Tags(
-            Name=Join("_", [Ref("AWS::StackName"), instance_name]))
-    ))
-
 db_instance = t.add_resource(ec2.Instance(
     'DBInstance',
     ImageId=ami_ids["db"],
-    InstanceType="t2.micro",
+    InstanceType="t2.small",
     Metadata=get_instance_metadata("DBInstance"),
     IamInstanceProfile='NatS3Access',
     KeyName=keyname,
@@ -547,6 +473,7 @@ db_instance = t.add_resource(ec2.Instance(
                 ' s3 cp s3://atambol/keys/db.pub /home/ec2-user/.ssh/id_rsa.pub\n',
                 'aws --region ', Ref('AWS::Region'),
                 ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
+                'aws --region ', Ref('AWS::Region'),
                 'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
                 'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
 
@@ -567,11 +494,16 @@ db_instance = t.add_resource(ec2.Instance(
                 'git clone https://github.com/atambol/RUBiS.git\n',
                 'export RUBIS_HOME=`readlink -f RUBiS`\n',
                 'cd $RUBIS_HOME/database\n',
+                ' s3 cp s3://atambol/keys/rubis_backup.sql.gz /home/ec2-user/rubis_backup.sql.gz\n',
+                'chmod 644 /home/ec2-user/rubis_backup.sql.gz\n',
+                'gunzip rubis_backup.sql.gz\n',
+
                 'mysql -u root --execute="CREATE DATABASE rubis;"\n',
                 'mysql -u root --execute="GRANT ALL PRIVILEGES ON *.* TO \'root\'@\'%\' WITH GRANT OPTION;"\n',
                 'mysql -uroot rubis < rubis.sql\n',
                 'mysql -uroot rubis < categories.sql\n',
                 'mysql -uroot rubis < regions.sql\n',
+                'mysql -uroot rubis < rubis_backup.sql\n',
 
                 # 'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/MetricsKafkaProducer.py -P /home/ec2-user/\n',
                 # 'chown ec2-user.ec2-user /home/ec2-user/MetricsKafkaProducer.py\n',
@@ -588,7 +520,7 @@ db_instance = t.add_resource(ec2.Instance(
     CreationPolicy=CreationPolicy(
         ResourceSignal=ResourceSignal(
             Count=1,
-            Timeout='PT5M')),
+            Timeout='PT15M')),
     DependsOn=["PrivateDefaultRoute"],
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "DB"]))
@@ -667,6 +599,79 @@ web_server_instance = t.add_resource(ec2.Instance(
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "WebServer"]))
 ))
+
+for i in range(1, 4):
+    key = "rubis_client" + str(i)
+    instance_name = "RubisInstance" + str(i)
+    t.add_resource(ec2.Instance(
+        instance_name,
+        ImageId=ami_ids[key],
+        InstanceType="t2.micro",
+        Metadata=get_instance_metadata(instance_name),
+        KeyName=keyname,
+        SourceDestCheck='true',
+        IamInstanceProfile='NatS3Access',
+        NetworkInterfaces=[
+            ec2.NetworkInterfaceProperty(
+                GroupSet=[Ref(instance_security_group)],
+                PrivateIpAddress=address[key],
+                DeviceIndex='0',
+                DeleteOnTermination='true',
+                SubnetId=Ref(private_subnet))],
+        UserData=Base64(
+            Join(
+                '',
+                [
+                    '#!/bin/bash -xe\n',
+                    'yum update -y aws-cfn-bootstrap\n',
+                    '/opt/aws/bin/cfn-init -v ',
+                    '         --stack=',
+                    Ref('AWS::StackName'),
+                    '         --resource=' + instance_name,
+                    '         --region=',
+                    Ref('AWS::Region'),
+                    '\n',
+
+                    'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/rubis', i, ' /home/ec2-user/.ssh/id_rsa\n',
+                    'aws --region ', Ref('AWS::Region'),
+                    ' s3 cp s3://atambol/keys/rubis', i, ' /home/ec2-user/.ssh/id_rsa.pub\n',
+                    'aws --region ', Ref('AWS::Region'),
+                    ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
+                    'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+                    'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+
+                    'yum update -y\n',
+                    'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
+                    'yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n',
+                    'pip install psutil\n',
+                    'git clone https://github.com/atambol/RUBiS.git\n',
+                    'export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk"\n',
+                    'export RUBIS_HOME=`readlink -f RUBiS`\n',
+                    'cd $RUBIS_HOME/Client\n',
+                    #'python generateProperties.py -d ', address["db"], ' -p ', address["web_server"], '\n',
+                    'export PATH="$JAVA_HOME/bin:$PATH"\n',
+                    'echo "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"" >> /etc/environment\n',
+                    'echo "export PATH=\"$JAVA_HOME/bin:$PATH\"" >> /etc/environment\n',
+                    'chown ec2-user.ec2-user /RUBiS -R\n',
+                    'make client\n',
+                    'make emulator &\n',
+
+                    '/opt/aws/bin/cfn-signal -e $? ',
+                    '         --stack=',
+                    Ref('AWS::StackName'),
+                    '         --resource=' + instance_name,
+                    '         --region=',
+                    Ref('AWS::Region'),
+                    '\n',
+                ])),
+        CreationPolicy=CreationPolicy(
+            ResourceSignal=ResourceSignal(
+                Count=1,
+                Timeout='PT5M')),
+        DependsOn=["DBInstance"],
+        Tags=Tags(
+            Name=Join("_", [Ref("AWS::StackName"), instance_name]))
+    ))
 
 # Generate a template
 with open(template_file, "w") as f:

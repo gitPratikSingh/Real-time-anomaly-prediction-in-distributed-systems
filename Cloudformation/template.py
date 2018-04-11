@@ -274,7 +274,7 @@ nat_instance = t.add_resource(ec2.Instance(
 
                 'pip install kafka-python\n',
                 'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/StreamAggregator.py -P /home/ec2-user\n',
-                'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/DataCollector.py -P /home/ec2-user\n',
+                #'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/DataCollector.py -P /home/ec2-user\n',
                 'chown ec2-user.ec2-user /home/ec2-user/*.py\n',
                 'python /home/ec2-user/StreamAggregator.py & \n',
                 '/opt/aws/bin/cfn-signal -e $?',

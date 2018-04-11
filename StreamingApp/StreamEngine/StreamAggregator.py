@@ -45,10 +45,28 @@ def insert(data, stat, response):
             return produce
 
     elif stat:
-        if stat["timestamp"] == data["curr"]["timestamp"]:
+        if stat["timestamp"] > data["curr"]["timestamp"]:
+            produce = data["prev"].copy()
+            if produce["count"]:
+                produce["average"] = produce["summation"] / produce["count"]
+            else:
+                produce["average"] = 0
+            data["prev"] = data["curr"].copy()
+            data["curr"] = {}
+            data["curr"]["timestamp"] = stat["timestamp"]
+            data["curr"]["max"] = 0
+            data["curr"]["cpu"] = stat["cpu"]
+            data["curr"]["mem"] = stat["mem"]
+            data["curr"]["count"] = 0
+            data["curr"]["violations"] = 0
+            return produce
+        elif stat["timestamp"] == data["curr"]["timestamp"]:
             data["curr"]["cpu"] = stat["cpu"]
             data["curr"]["mem"] = stat["mem"]
             return produce
+        elif stat["timestamp"] == data["prev"]["timestamp"]:
+            data["prev"]["cpu"] = stat["cpu"]
+            data["prev"]["mem"] = stat["mem"]
         else:
             return produce
 
@@ -56,7 +74,7 @@ def insert(data, stat, response):
 def response_time_aggregator():
     response_time_topic = 'responsetime'
     stats_topic = 'stats'
-    aggregate_topic = 'aggregate'
+    aggregate_topic = 'aggregate2'
 
     while True:
         try:
@@ -100,8 +118,8 @@ def response_time_aggregator():
                 produce = insert(data=data,
                                  stat={"timestamp": int(message[0]), "cpu": int(message[1]), "mem": int(message[2])},
                                  response=None)
-                # if produce:
-                #     aggregate_producer.send(aggregate_topic, json.dumps(produce))  # not a synchronous send
+                if produce:
+                    aggregate_producer.send(aggregate_topic, json.dumps(produce))  # not a synchronous send
 
                 # Consumer responses for the entire second
                 produce = None

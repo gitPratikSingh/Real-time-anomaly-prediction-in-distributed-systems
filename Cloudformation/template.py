@@ -33,7 +33,7 @@ address = {
     "rubis_client1": '172.25.130.10',
     "rubis_client2": '172.25.130.11',
     "rubis_client3": '172.25.130.12',
-    "htm_engine": '172.25.130.13'
+    "htm": '172.25.130.13'
 }
 
 ami_ids = {
@@ -44,7 +44,7 @@ ami_ids = {
     "db": "ami-ab1a31ce",
     "kafka": "ami-ab1a31ce",
     "web_server": "ami-ab1a31ce",
-    "htm_engine": "ami-aad1e0cf",
+    "htm": "ami-aad1e0cf",
 }
 
 t = Template()
@@ -383,6 +383,103 @@ def get_instance_metadata(instance_name):
                             ])})})}))
 
 
+htm_instance = t.add_resource(ec2.Instance(
+    'HTM',
+    ImageId=ami_ids["htm"],
+    InstanceType="t2.micro",
+    Metadata=autoscaling.Metadata(
+        cfn.Init({
+            'config': cfn.InitConfig(
+                files=cfn.InitFiles({
+                    '/etc/cfn/cfn-hup.conf': cfn.InitFile(
+                        content=Join('',
+                            ['[main]\n',
+                             'stack=',
+                             Ref('AWS::StackName'),
+                             '\n',
+                             'region=',
+                             Ref('AWS::Region'),
+                             '\n',
+                            ]),
+                        mode='000400',
+                        owner='root',
+                        group='root'),
+                    '/etc/cfn/hooks.d/cfn-auto-reloader.conf': cfn.InitFile(
+                        content=Join('',
+                            ['[cfn-auto-reloader-hook]\n',
+                             'triggers=post.update\n',
+                             'path=Resources.',
+                             'HTM',
+                             '.Metadata.AWS::CloudFormation::Init\n',
+                             'action=/opt/aws/bin/cfn-init -v ',
+                             '         --stack=',
+                             Ref('AWS::StackName'),
+                             '         --resource=',
+                             'HTM',
+                             '         --region=',
+                             Ref('AWS::Region'),
+                             '\n',
+                             'runas=root\n',
+                            ]))}),
+                services={
+                    'sysvinit': cfn.InitServices({
+                        'httpd': cfn.InitService(
+                            enabled=True,
+                            ensureRunning=True),
+                        'cfn-hup': cfn.InitService(
+                            enabled=True,
+                            ensureRunning=True,
+                            files=[
+                                '/etc/cfn/cfn-hup.conf',
+                                '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+                            ])})})})),
+    KeyName=keyname,
+    SourceDestCheck='true',
+    IamInstanceProfile='NatS3Access',
+    NetworkInterfaces=[
+        ec2.NetworkInterfaceProperty(
+            GroupSet=[Ref(instance_security_group)],
+            PrivateIpAddress=address['htm'],
+            DeviceIndex='0',
+            DeleteOnTermination='true',
+            SubnetId=Ref(private_subnet))],
+    UserData=Base64(
+        Join(
+            '',
+            [
+                '#!/bin/bash -xe\n',
+                'yum update -y aws-cfn-bootstrap\n',
+                '/opt/aws/bin/cfn-init -v ',
+                '         --stack=',
+                Ref('AWS::StackName'),
+                '         --resource=HTM',
+                '         --region=',
+                Ref('AWS::Region'),
+                '\n',
+
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/kafka /home/ec2-user/.ssh/id_rsa\n',
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/kafka.pub /home/ec2-user/.ssh/id_rsa.pub\n',
+                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
+                'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+                'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
+
+                '/opt/aws/bin/cfn-signal -e $? ',
+                '         --stack=',
+                Ref('AWS::StackName'),
+                '         --resource=HTM',
+                '         --region=',
+                Ref('AWS::Region'),
+                '\n',
+            ])),
+    CreationPolicy=CreationPolicy(
+        ResourceSignal=ResourceSignal(
+            Count=1,
+            Timeout='PT5M')),
+    DependsOn=["PrivateDefaultRoute"],
+    Tags=Tags(
+        Name=Join("_", [Ref("AWS::StackName"), "HTM"]))
+))
+
 kafka_instance = t.add_resource(ec2.Instance(
     'KafkaInstance',
     ImageId=ami_ids["kafka"],
@@ -503,8 +600,8 @@ db_instance = t.add_resource(ec2.Instance(
                 'export RUBIS_HOME=`readlink -f RUBiS`\n',
                 'cd $RUBIS_HOME/database\n',
                 'aws --region ', Ref('AWS::Region'),
-                ' s3 cp s3://atambol/keys/rubis_backup.sql.gz /home/ec2-user/rubis_backup.sql.gz\n',
-                'chmod 644 /home/ec2-user/rubis_backup.sql.gz\n',
+                ' s3 cp s3://atambol/keys/rubis_backup.sql.gz rubis_backup.sql.gz\n',
+                'chmod 644 rubis_backup.sql.gz\n',
                 'gunzip rubis_backup.sql.gz\n',
 
                 'mysql -u root --execute="CREATE DATABASE rubis;"\n',

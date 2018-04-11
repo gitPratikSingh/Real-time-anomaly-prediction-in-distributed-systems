@@ -44,7 +44,8 @@ ami_ids = {
     "db": "ami-ab1a31ce",
     "kafka": "ami-ab1a31ce",
     "web_server": "ami-ab1a31ce",
-    "htm": "ami-aad1e0cf",
+    # "htm": "ami-aad1e0cf",
+    "htm": "ami-6e95a50b",
 }
 
 t = Template()
@@ -293,12 +294,6 @@ nat_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "Nat"]))
 ))
 
-# eip = t.add_resource(ec2.EIP(
-#     'NatEip',
-#     DependsOn='InternetGatewayAttachment',
-#     InstanceId=Ref(nat_instance)
-# ))
-
 default_private_route = t.add_resource(ec2.Route(
     'PrivateDefaultRoute',
     RouteTableId=Ref(private_route_table),
@@ -382,57 +377,10 @@ def get_instance_metadata(instance_name):
                                 '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
                             ])})})}))
 
-
 htm_instance = t.add_resource(ec2.Instance(
     'HTM',
     ImageId=ami_ids["htm"],
-    InstanceType="t2.micro",
-    Metadata=autoscaling.Metadata(
-        cfn.Init({
-            'config': cfn.InitConfig(
-                files=cfn.InitFiles({
-                    '/etc/cfn/cfn-hup.conf': cfn.InitFile(
-                        content=Join('',
-                            ['[main]\n',
-                             'stack=',
-                             Ref('AWS::StackName'),
-                             '\n',
-                             'region=',
-                             Ref('AWS::Region'),
-                             '\n',
-                            ]),
-                        mode='000400',
-                        owner='root',
-                        group='root'),
-                    '/etc/cfn/hooks.d/cfn-auto-reloader.conf': cfn.InitFile(
-                        content=Join('',
-                            ['[cfn-auto-reloader-hook]\n',
-                             'triggers=post.update\n',
-                             'path=Resources.',
-                             'HTM',
-                             '.Metadata.AWS::CloudFormation::Init\n',
-                             'action=/opt/aws/bin/cfn-init -v ',
-                             '         --stack=',
-                             Ref('AWS::StackName'),
-                             '         --resource=',
-                             'HTM',
-                             '         --region=',
-                             Ref('AWS::Region'),
-                             '\n',
-                             'runas=root\n',
-                            ]))}),
-                services={
-                    'sysvinit': cfn.InitServices({
-                        'httpd': cfn.InitService(
-                            enabled=True,
-                            ensureRunning=True),
-                        'cfn-hup': cfn.InitService(
-                            enabled=True,
-                            ensureRunning=True,
-                            files=[
-                                '/etc/cfn/cfn-hup.conf',
-                                '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
-                            ])})})})),
+    InstanceType="t2.small",
     KeyName=keyname,
     SourceDestCheck='true',
     IamInstanceProfile='NatS3Access',
@@ -443,38 +391,6 @@ htm_instance = t.add_resource(ec2.Instance(
             DeviceIndex='0',
             DeleteOnTermination='true',
             SubnetId=Ref(private_subnet))],
-    UserData=Base64(
-        Join(
-            '',
-            [
-                '#!/bin/bash -xe\n',
-                'yum update -y aws-cfn-bootstrap\n',
-                '/opt/aws/bin/cfn-init -v ',
-                '         --stack=',
-                Ref('AWS::StackName'),
-                '         --resource=HTM',
-                '         --region=',
-                Ref('AWS::Region'),
-                '\n',
-
-                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/kafka /home/ec2-user/.ssh/id_rsa\n',
-                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/kafka.pub /home/ec2-user/.ssh/id_rsa.pub\n',
-                'aws --region ', Ref('AWS::Region'), ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
-                'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
-                'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
-
-                '/opt/aws/bin/cfn-signal -e $? ',
-                '         --stack=',
-                Ref('AWS::StackName'),
-                '         --resource=HTM',
-                '         --region=',
-                Ref('AWS::Region'),
-                '\n',
-            ])),
-    CreationPolicy=CreationPolicy(
-        ResourceSignal=ResourceSignal(
-            Count=1,
-            Timeout='PT5M')),
     DependsOn=["PrivateDefaultRoute"],
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "HTM"]))

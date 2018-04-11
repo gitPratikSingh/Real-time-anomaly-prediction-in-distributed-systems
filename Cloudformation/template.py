@@ -44,7 +44,7 @@ ami_ids = {
     "db": "ami-ab1a31ce",
     "kafka": "ami-ab1a31ce",
     "web_server": "ami-ab1a31ce",
-    "htm_engine": "ami-ab1a31ce",
+    "htm_engine": "ami-aad1e0cf",
 }
 
 t = Template()
@@ -423,6 +423,7 @@ kafka_instance = t.add_resource(ec2.Instance(
                 'service docker start\n',
                 'sudo docker run --rm -it -d -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -e ADV_HOST=172.25.130.9 landoop/fast-data-dev\n',
                 '/opt/aws/bin/cfn-signal -e $? ',
+
                 '         --stack=',
                 Ref('AWS::StackName'),
                 '         --resource=KafkaInstance',
@@ -447,6 +448,14 @@ db_instance = t.add_resource(ec2.Instance(
     IamInstanceProfile='NatS3Access',
     KeyName=keyname,
     SourceDestCheck='true',
+    BlockDeviceMappings=[
+        ec2.BlockDeviceMapping(
+            DeviceName="/dev/xvda",
+            Ebs=ec2.EBSBlockDevice(
+                VolumeSize="15"
+            )
+        ),
+    ],
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
@@ -473,7 +482,6 @@ db_instance = t.add_resource(ec2.Instance(
                 ' s3 cp s3://atambol/keys/db.pub /home/ec2-user/.ssh/id_rsa.pub\n',
                 'aws --region ', Ref('AWS::Region'),
                 ' s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n',
-                'aws --region ', Ref('AWS::Region'),
                 'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
                 'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
 
@@ -494,6 +502,7 @@ db_instance = t.add_resource(ec2.Instance(
                 'git clone https://github.com/atambol/RUBiS.git\n',
                 'export RUBIS_HOME=`readlink -f RUBiS`\n',
                 'cd $RUBIS_HOME/database\n',
+                'aws --region ', Ref('AWS::Region'),
                 ' s3 cp s3://atambol/keys/rubis_backup.sql.gz /home/ec2-user/rubis_backup.sql.gz\n',
                 'chmod 644 /home/ec2-user/rubis_backup.sql.gz\n',
                 'gunzip rubis_backup.sql.gz\n',
@@ -504,10 +513,6 @@ db_instance = t.add_resource(ec2.Instance(
                 'mysql -uroot rubis < categories.sql\n',
                 'mysql -uroot rubis < regions.sql\n',
                 'mysql -uroot rubis < rubis_backup.sql\n',
-
-                # 'wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/MetricsKafkaProducer.py -P /home/ec2-user/\n',
-                # 'chown ec2-user.ec2-user /home/ec2-user/MetricsKafkaProducer.py\n',
-                # 'python /home/ec2-user/MetricsKafkaProducer.py & \n',
 
                 '/opt/aws/bin/cfn-signal -e $? ',
                 '         --stack=',

@@ -54,3 +54,6 @@ Objective: Implement FCHAIN/UBL/PREPARE & try to reduce time for any of the abov
 
 #### Kafka
 * Kafka Broker UI: http://<NAT's Public IP>:3030
+* System metrics topic name: `stats`
+* Response time topic name: `responsetime`
+* Aggregated metrics and response time topic (calculated per second): `aggregate`

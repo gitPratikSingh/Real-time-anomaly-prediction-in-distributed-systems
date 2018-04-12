@@ -30,17 +30,17 @@ address = {
     "db": '172.25.130.7',
     "web_server": '172.25.130.8',
     "kafka": '172.25.130.9',
-    "rubis_client1": '172.25.130.10',
-    "rubis_client2": '172.25.130.11',
-    "rubis_client3": '172.25.130.12',
-    "htm": '172.25.130.13'
+    "htm": '172.25.130.10',
+    "rubis_client1": '172.25.130.11',
+    "rubis_client2": '172.25.130.12',
+    "rubis_client3": '172.25.130.13',
+    "rubis_client4": '172.25.130.14',
+    "rubis_client5": '172.25.130.15',
 }
 
 ami_ids = {
     "nat": "ami-f27b5a97",
-    "rubis_client1": "ami-ab1a31ce",
-    "rubis_client2": "ami-ab1a31ce",
-    "rubis_client3": "ami-ab1a31ce",
+    "rubis": "ami-ab1a31ce",
     "db": "ami-ab1a31ce",
     "kafka": "ami-ab1a31ce",
     "web_server": "ami-ab1a31ce",
@@ -377,13 +377,14 @@ def get_instance_metadata(instance_name):
                                 '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
                             ])})})}))
 
+
 htm_instance = t.add_resource(ec2.Instance(
     'HTM',
     ImageId=ami_ids["htm"],
     InstanceType="t2.small",
     KeyName=keyname,
     SourceDestCheck='true',
-    IamInstanceProfile='NatS3Access',
+    # IamInstanceProfile='NatS3Access',
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
@@ -618,12 +619,12 @@ web_server_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "WebServer"]))
 ))
 
-for i in range(1, 4):
+for i in range(1, 6):
     key = "rubis_client" + str(i)
     instance_name = "RubisInstance" + str(i)
     t.add_resource(ec2.Instance(
         instance_name,
-        ImageId=ami_ids[key],
+        ImageId=ami_ids['rubis'],
         InstanceType="t2.micro",
         Metadata=get_instance_metadata(instance_name),
         KeyName=keyname,

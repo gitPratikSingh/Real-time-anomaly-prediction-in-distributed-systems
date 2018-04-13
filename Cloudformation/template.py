@@ -624,7 +624,7 @@ web_server_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "WebServer"]))
 ))
 
-for i in range(1, 11):
+for i in range(1, 6):
     key = "rubis_client" + str(i)
     instance_name = "RubisInstance" + str(i)
     t.add_resource(ec2.Instance(

@@ -457,7 +457,7 @@ kafka_instance = t.add_resource(ec2.Instance(
 db_instance = t.add_resource(ec2.Instance(
     'DBInstance',
     ImageId=ami_ids["db"],
-    InstanceType="t2.small",
+    InstanceType="t2.micro",
     Metadata=get_instance_metadata("DBInstance"),
     IamInstanceProfile='NatS3Access',
     KeyName=keyname,
@@ -548,7 +548,7 @@ db_instance = t.add_resource(ec2.Instance(
 web_server_instance = t.add_resource(ec2.Instance(
     'WebServerInstance',
     ImageId=ami_ids["web_server"],
-    InstanceType="t2.micro",
+    InstanceType="t2.small",
     Metadata=get_instance_metadata("WebServerInstance"),
     IamInstanceProfile='NatS3Access',
     KeyName=keyname,

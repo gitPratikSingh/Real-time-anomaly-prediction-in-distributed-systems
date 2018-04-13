@@ -17,11 +17,23 @@ def insert_data(timestamp, cpu, mem, response_time):
     else:
         if response_time:
             if timestamp in timestamps:
-                data[timestamp]["summation"] += response_time
-                data[timestamp]["count"] += 1
+                try:
+                    data[timestamp]["summation"] += response_time
+                except KeyError:
+                    data[timestamp]["summation"] = response_time
+                try:
+                    data[timestamp]["count"] += 1
+                except KeyError:
+                    data[timestamp]["count"] = 1
                 if response_time >= violation:
-                    data[timestamp]["violations"] += 1
-                if data[timestamp]["max"] < response_time:
+                    try:
+                        data[timestamp]["violations"] += 1
+                    except KeyError:
+                        data[timestamp]["violations"] = 1
+                try:
+                    if data[timestamp]["max"] < response_time:
+                        data[timestamp]["max"] = response_time
+                except KeyError:
                     data[timestamp]["max"] = response_time
             else:
                 timestamps.append(timestamp)
@@ -82,6 +94,10 @@ def response_time_aggregator():
                     aggregate["timestamp"] = timestamp
                     print aggregate
                     if len(aggregate.keys()) == 7:  # Produce clean data
+                        try:
+                            aggregate["mean"] = aggregate['summation'] / aggregate['count']
+                        except ZeroDivisionError:
+                            aggregate["mean"] = 0
                         aggregate_producer.send(aggregate_topic, json.dumps(aggregate))  # not a synchronous send
 
         except kafka.errors.NoBrokersAvailable:

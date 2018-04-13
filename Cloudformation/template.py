@@ -36,6 +36,11 @@ address = {
     "rubis_client3": '172.25.130.13',
     "rubis_client4": '172.25.130.14',
     "rubis_client5": '172.25.130.15',
+    "rubis_client6": '172.25.130.16',
+    "rubis_client7": '172.25.130.17',
+    "rubis_client8": '172.25.130.18',
+    "rubis_client9": '172.25.130.19',
+    "rubis_client10": '172.25.130.20',
 }
 
 ami_ids = {
@@ -619,7 +624,7 @@ web_server_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "WebServer"]))
 ))
 
-for i in range(1, 6):
+for i in range(1, 11):
     key = "rubis_client" + str(i)
     instance_name = "RubisInstance" + str(i)
     t.add_resource(ec2.Instance(

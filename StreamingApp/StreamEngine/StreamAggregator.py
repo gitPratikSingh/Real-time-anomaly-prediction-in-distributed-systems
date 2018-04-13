@@ -99,7 +99,6 @@ def response_time_aggregator():
                         except ZeroDivisionError:
                             aggregate["mean"] = 0
                         aggregate_producer.send(aggregate_topic, json.dumps(aggregate))  # not a synchronous send
-
         except kafka.errors.NoBrokersAvailable:
             pass
 

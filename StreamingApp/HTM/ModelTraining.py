@@ -27,7 +27,7 @@ def runModel(jsonData):
 		
 	cpuMetric = float(cpuMetric)
 	memMetric = float(memMetric)
-	
+	"""
 	start = datetime.datetime.now()
 	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False)
 	end = datetime.datetime.now()
@@ -35,6 +35,7 @@ def runModel(jsonData):
 	model1.outputFile.write(str(actualVal) + "|" + str(predictions) + "|" + errorVal + "|" + str(anomalyScore) + "|" +str(elapsed.microseconds) +"\n")
 	model1.outputFile.flush()
 	"""
+	
 	start = datetime.datetime.now()
 	actualVal, predictions, errorVal, anomalyScore = MultiLevelNetworkModel.runNetwork(model2.network, model2.dataSource, cpuMetric, False)
 	end = datetime.datetime.now()
@@ -42,6 +43,7 @@ def runModel(jsonData):
 	model2.outputFile.write(str(actualVal) + "|" + str(predictions) + "|" + errorVal + "|" + str(anomalyScore) + "|" + str(elapsed.microseconds) +"\n")
 	model2.outputFile.flush()
 	
+	"""
 	start = datetime.datetime.now()
 	actualVal, anomalyScore = MultiLevelNetworkAnomaly.runNetwork(model3.network, model3.dataSource, cpuMetric, memMetric, False)
 	end = datetime.datetime.now()

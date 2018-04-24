@@ -386,7 +386,7 @@ def get_instance_metadata(instance_name):
 htm_instance = t.add_resource(ec2.Instance(
     'HTM',
     ImageId=ami_ids["htm"],
-    InstanceType="t2.small",
+    InstanceType="t2.large",
     KeyName=keyname,
     SourceDestCheck='true',
     # IamInstanceProfile='NatS3Access',
@@ -440,7 +440,7 @@ kafka_instance = t.add_resource(ec2.Instance(
                 'yum update -y\n',
                 'yum install docker -y\n',
                 'service docker start\n',
-                'sudo docker run --rm -it -d -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -e ADV_HOST=172.25.130.9 landoop/fast-data-dev\n',
+                'sudo docker run --rm -it -d -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -e ADV_HOST=172.25.130.9 -m 6000M landoop/fast-data-dev\n',
                 '/opt/aws/bin/cfn-signal -e $? ',
 
                 '         --stack=',

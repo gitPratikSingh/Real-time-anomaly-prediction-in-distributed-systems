@@ -21,10 +21,10 @@ def main():
                     last_epoch = epoch
                     future = producer.send(producer_topic, data)
                     # Block for 'synchronous' sends
-                    try:
-                        future.get(timeout=10)
-                    except KafkaError as err:
-                        print err
+                    # try:
+                    #     future.get(timeout=10)
+                    # except KafkaError as err:
+                    #     print err
         except kafka.errors.NoBrokersAvailable:
             pass
 

@@ -43,6 +43,19 @@ Objective: Implement FCHAIN/UBL/PREPARE & try to reduce time for any of the abov
                 
 ![AWS Architectures](https://github.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/blob/master/AWS_Architecture.png?raw=true "AWS_Architectures")
 
+IP addresses:
+* nat: 172.25.0.5
+* db: 172.25.130.7
+* web_server: 172.25.130.8
+* kafka: 172.25.130.9
+* htm: 172.25.130.10
+* rubis_client1: 172.25.130.11
+* rubis_client2: 172.25.130.12
+* rubis_client3: 172.25.130.13
+* rubis_client4: 172.25.130.14
+* rubis_client5: 172.25.130.15
+
+
 #### RUBiS
 
 * [RUBiS Repository](https://github.com/atambol/RUBiS)

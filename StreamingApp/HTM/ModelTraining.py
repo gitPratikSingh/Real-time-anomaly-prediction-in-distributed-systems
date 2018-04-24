@@ -33,14 +33,14 @@ def runModel(jsonData):
 	elapsed = end - start
 	model1.outputFile.write(str(actualVal) + "|" + str(predictions) + "|" + errorVal + "|" + str(anomalyScore) + "|" +str(elapsed.microseconds) +"\n")
 	model1.outputFile.flush()
-	
+	"""
 	start = datetime.datetime.now()
 	actualVal, predictions, errorVal, anomalyScore = MultiLevelNetworkModel.runNetwork(model2.network, model2.dataSource, cpuMetric, False)
 	end = datetime.datetime.now()
 	elapsed = end - start
 	model2.outputFile.write(str(actualVal) + "|" + str(predictions) + "|" + errorVal + "|" + str(anomalyScore) + "|" + str(elapsed.microseconds) +"\n")
 	model2.outputFile.flush()
-	"""
+	
 	start = datetime.datetime.now()
 	actualVal, anomalyScore = MultiLevelNetworkAnomaly.runNetwork(model3.network, model3.dataSource, cpuMetric, memMetric, False)
 	end = datetime.datetime.now()

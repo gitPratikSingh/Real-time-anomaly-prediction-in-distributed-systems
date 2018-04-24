@@ -18,8 +18,14 @@ def runModel(jsonData):
 	global model3
 
 	print("RunMethod" + str(jsonData))
-	cpuMetric = float(json.loads(jsonData)['cpu'])
-	memMetric = float(json.loads(jsonData)['mem'])
+	cpuMetric = json.loads(jsonData)['cpu']
+	memMetric = json.loads(jsonData)['mem']
+	
+	if(cpuMetric == 'None' || memMetric == 'None')
+		return;
+		
+	cpuMetric = float(cpuMetric)
+	memMetric = float(memMetric)
 	
 	start = datetime.datetime.now()
 	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False)
@@ -62,10 +68,10 @@ def initModels():
 	model3.outputFile.flush()
 	
 def main():
-	var_bootstrap_servers=sys.argv[1]+':9092'
+	var_bootstrap_servers='172.25.130.9'+':9092'
 	initModels()
 	
-	consumer = KafkaConsumer('HTMTrainingData', group_id="ModelConsumerGp", bootstrap_servers=var_bootstrap_servers)
+	consumer = KafkaConsumer('aggregate1', group_id="ModelConsumerGp", bootstrap_servers=var_bootstrap_servers)
 	
 	for msg in consumer:
 		runModel(msg.value)

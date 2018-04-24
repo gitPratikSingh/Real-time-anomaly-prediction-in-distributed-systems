@@ -61,7 +61,7 @@ TM_PARAMS = {"verbosity": _VERBOSITY,
              "pamLength": 3}
 
 dataSource = None
-saveFrequency = 50
+saveFrequency = 10
 
 def getOrCreateDataSource(fields, names):
 	global dataSource

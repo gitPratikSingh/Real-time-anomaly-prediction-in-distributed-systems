@@ -180,7 +180,7 @@ class kafkaRecordStream(RecordStreamIface):
 	line = []
 	global data
 	global mem
-	#print("grabStreamData Called: "+str(data))
+	print("grabStreamData Called: "+str(data))
 	line.append(data)
 	if mem is not None:
 		line.append(mem)

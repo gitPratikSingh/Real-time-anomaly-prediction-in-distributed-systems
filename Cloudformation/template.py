@@ -389,7 +389,7 @@ htm_instance = t.add_resource(ec2.Instance(
     InstanceType="t2.large",
     KeyName=keyname,
     SourceDestCheck='true',
-    # IamInstanceProfile='NatS3Access',
+    Metadata=get_instance_metadata("HTM"),
     NetworkInterfaces=[
         ec2.NetworkInterfaceProperty(
             GroupSet=[Ref(instance_security_group)],
@@ -397,7 +397,39 @@ htm_instance = t.add_resource(ec2.Instance(
             DeviceIndex='0',
             DeleteOnTermination='true',
             SubnetId=Ref(private_subnet))],
+    UserData=Base64(
+        Join(
+            '',
+            [
+                '#!/bin/bash -xe\n',
+                'yum update -y aws-cfn-bootstrap\n',
+                '/opt/aws/bin/cfn-init -v ',
+                '         --stack=',
+                Ref('AWS::StackName'),
+                '         --resource=HTM',
+                '         --region=',
+                Ref('AWS::Region'),
+                '\n',
+                'yum update -y\n',
+                'yum install -y git\n',
+                'git clone https://github.com/atambol/Real-time-anomaly-prediction-in-distributed-systems.git\n',
+                'chown ubuntu.ubuntu Real-time-anomaly-prediction-in-distributed-systems -R\n',
+
+                'pip install psutil kafka-python\n',
+                '/opt/aws/bin/cfn-signal -e $? ',
+
+                '         --stack=',
+                Ref('AWS::StackName'),
+                '         --resource=HTM',
+                '         --region=',
+                Ref('AWS::Region'),
+                '\n',
+            ])),
     DependsOn=["PrivateDefaultRoute"],
+    CreationPolicy=CreationPolicy(
+        ResourceSignal=ResourceSignal(
+            Count=1,
+            Timeout='PT5M')),
     Tags=Tags(
         Name=Join("_", [Ref("AWS::StackName"), "HTM"]))
 ))

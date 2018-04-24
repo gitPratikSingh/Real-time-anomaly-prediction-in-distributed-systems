@@ -103,7 +103,8 @@ def response_time_aggregator():
                             aggregate["mean"] = 0
                         aggregate_producer.send(aggregate_topic, json.dumps(aggregate))  # not a synchronous send
                         print aggregate
-                    if not aggregate['cpu']:
+
+                    if 'cpu' not in aggregate.keys() or not aggregate['cpu']:
                         reset -= 1
 
                 if reset == 0:
@@ -111,7 +112,7 @@ def response_time_aggregator():
         except kafka.errors.NoBrokersAvailable:
             pass
         except ValueError:
-            timestamps = None
+            pass
 
 
 

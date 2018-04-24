@@ -21,7 +21,7 @@ def runModel(jsonData):
 	cpuMetric = json.loads(jsonData)['cpu']
 	memMetric = json.loads(jsonData)['mem']
 	
-	if(cpuMetric == 'None' || memMetric == 'None')
+	if(cpuMetric == 'None' or memMetric == 'None'):
 		return;
 		
 	cpuMetric = float(cpuMetric)
@@ -74,6 +74,7 @@ def main():
 	consumer = KafkaConsumer('aggregate1', group_id="ModelConsumerGp", bootstrap_servers=var_bootstrap_servers)
 	
 	for msg in consumer:
+		
 		runModel(msg.value)
     
 if __name__ == "__main__":

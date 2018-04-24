@@ -147,8 +147,12 @@ def run(network):
 	
 	print("Current Predictions" + str(l1Result))
 	
-	return str(actual), results[numRecords%(maxSteps+1)], 
-	str([x / numRecords for x in l1ErrorSum]), l1AnomalyScore
+	predictions =results[numRecords%(maxSteps+1)]
+	errorVal = str([x / numRecords for x in l1ErrorSum])
+	print(predictions)
+	print(errorVal)
+	
+	return str(actual), predictions, errorVal, l1AnomalyScore
 
 if __name__ == "__main__":
 	dataSource, network = BuildNetwork()

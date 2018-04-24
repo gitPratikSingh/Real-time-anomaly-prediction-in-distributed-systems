@@ -151,6 +151,8 @@ def run(network):
 	errorVal = str([x / numRecords for x in l1ErrorSum])
 	print(predictions)
 	print(errorVal)
+	print(l1AnomalyScore)
+	print(actual)
 	
 	return str(actual), predictions, errorVal, l1AnomalyScore
 

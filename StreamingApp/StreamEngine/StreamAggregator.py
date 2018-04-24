@@ -51,13 +51,16 @@ def insert_data(timestamp, cpu, mem, response_time):
                 timestamps.append(timestamp)
             data[timestamp]["cpu"] = cpu
             data[timestamp]["mem"] = mem
+            data[timestamp]["violations"] = 0
     return timestamps
 
 
 def response_time_aggregator():
     response_time_topic = 'responsetime'
+    reset = 3
     stats_topic = 'stats'
     aggregate_topic = 'aggregate'
+    delay = 6
 
     while True:
         try:
@@ -81,26 +84,36 @@ def response_time_aggregator():
                                          response_time=None)
 
                 # Consume responses for until third moment arrives
-                while len(timestamps) < 3:
+                while len(timestamps) < delay:
                     msg = response_time_consumer.next()
                     message = msg.value.split(',')
                     timestamps = insert_data(timestamp=int(message[1]),
                                              response_time=int(message[0]),
                                              cpu=None,
                                              mem=None)
-                if len(timestamps) > 2:
+                if len(timestamps) > delay - 1:
                     timestamp = min(timestamps)
                     aggregate = data.pop(timestamp)
                     aggregate["timestamp"] = timestamp
-                    print aggregate
+
                     if len(aggregate.keys()) == 7:  # Produce clean data
                         try:
                             aggregate["mean"] = aggregate['summation'] / aggregate['count']
                         except ZeroDivisionError:
                             aggregate["mean"] = 0
                         aggregate_producer.send(aggregate_topic, json.dumps(aggregate))  # not a synchronous send
+                        print aggregate
+
+                    if 'cpu' not in aggregate.keys() or not aggregate['cpu']:
+                        reset -= 1
+
+                if reset == 0:
+                    raise ValueError
         except kafka.errors.NoBrokersAvailable:
             pass
+        except ValueError:
+            pass
+
 
 
 parser = argparse.ArgumentParser()

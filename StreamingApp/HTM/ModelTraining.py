@@ -40,13 +40,14 @@ def runModel(jsonData):
 	elapsed = end - start
 	model2.outputFile.write(str(actualVal) + "|" + str(predictions) + "|" + errorVal + "|" + str(anomalyScore) + "|" + str(elapsed.microseconds) +"\n")
 	model2.outputFile.flush()
-	
+	"""
 	start = datetime.datetime.now()
 	actualVal, anomalyScore = MultiLevelNetworkAnomaly.runNetwork(model3.network, model3.dataSource, cpuMetric, memMetric, False)
 	end = datetime.datetime.now()
 	elapsed = end - start
 	model3.outputFile.write(str(actualVal) + "|" + str(anomalyScore) + "|" + str(elapsed.microseconds) +"\n")
 	model3.outputFile.flush()
+	"""
 	
 def initModels():
 	global model1
@@ -61,11 +62,13 @@ def initModels():
 	model2.outputFile.write("actualVal|predictions|avgError|anomalyScore|microseconds")
 	model2.outputFile.flush()
 	
+	"""
 	global model3
 	model3.dataSource, model3.network = MultiLevelNetworkAnomaly.BuildNetwork()
 	model3.outputFile = open("model3.txt","w+")
 	model3.outputFile.write("actualVal|anomalyScore|microseconds")
 	model3.outputFile.flush()
+	"""
 	
 def main():
 	var_bootstrap_servers='172.25.130.9'+':9092'

@@ -20,8 +20,9 @@ def runModel(jsonData):
 	print("RunMethod" + str(jsonData))
 	cpuMetric = json.loads(jsonData)['cpu']
 	memMetric = json.loads(jsonData)['mem']
+	nothing = ['None', 'null', None]
 	
-	if(cpuMetric == 'None' or memMetric == 'None'):
+	if(cpuMetric in nothing or memMetric in nothing):
 		return;
 		
 	cpuMetric = float(cpuMetric)

@@ -143,16 +143,10 @@ def run(network):
 	print("Predicted: "+ str(results[numRecords%(maxSteps+1)]))
 	print("Average Error: "+ str([x / numRecords for x in l1ErrorSum]))
 	print("Classifier Anomaly Score: "+ str(l1AnomalyScore))	
-	print("\n")
-	
 	print("Current Predictions" + str(l1Result))
 	
 	predictions =results[numRecords%(maxSteps+1)]
 	errorVal = str([x / numRecords for x in l1ErrorSum])
-	print(predictions)
-	print(errorVal)
-	print(l1AnomalyScore)
-	print(actual)
 	
 	return str(actual), predictions, errorVal, l1AnomalyScore
 

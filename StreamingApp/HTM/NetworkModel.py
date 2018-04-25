@@ -136,7 +136,8 @@ def run(network):
 		if results[numRecords%(maxSteps+1)][i] != -1:
 			l1ErrorSum[i] += math.fabs(results[numRecords%(maxSteps+1)][i] - actual)
 		
-		r = (steps[i]+numRecords)%(maxSteps+1)
+		r = (steps[i]+numRecords)%(maxSteps)
+		print("RR" + str(len(l1Result)) + str(i))
 		results[r][i] = l1Result[i]
 
 	print("Actual Value: "+str(actual))

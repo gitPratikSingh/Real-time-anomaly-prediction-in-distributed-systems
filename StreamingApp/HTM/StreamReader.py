@@ -152,7 +152,7 @@ class kafkaRecordStream(RecordStreamIface):
     self.rewind()
 
   def printData(self):
-    print("Data:" +str(data))
+    print("Data:" +str(data) + ", "+ +str(mem))
 
   def setData(self, dataRec, memRec=None):
 	global data
@@ -180,11 +180,11 @@ class kafkaRecordStream(RecordStreamIface):
 	line = []
 	global data
 	global mem
-	print("grabStreamData Called: "+str(data))
 	line.append(data)
 	if mem is not None:
 		line.append(mem)
-		
+	
+	print("grabStreamData Called: "+str(line))
 	return line
   
   def getNextRecord(self, useCache=True):

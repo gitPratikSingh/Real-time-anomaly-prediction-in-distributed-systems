@@ -45,7 +45,7 @@ def runNetwork(network, dataSource, data, mem, disableTraining):
 	
 	#NetworkUtils.dataSource.data = data
 	dataSource.setData(data, mem)
-	#dataSource.printData()
+	dataSource.printData()
 	if disableTraining == 1:
 		network.regions[_L1_TEMPORAL_MEMORY].setParameter("learningMode", False)
 		network.regions[_L1_CLASSIFIER].setParameter('learningMode', False)

@@ -100,7 +100,7 @@ def createOneLevelNetwork(dataSource):
 	global results
 	results = [[-1 for x in range(w)] for y in range(h)] 
 	global l1ErrorSum
-	l1ErrorSum = [-1 for x in range(h)]
+	l1ErrorSum = [-1 for x in range(h-1)]
 	
 	print("Model Instantiated")
 	
@@ -137,7 +137,6 @@ def run(network):
 			l1ErrorSum[i] += math.fabs(results[numRecords%(maxSteps+1)][i] - actual)
 		
 		r = (steps[i]+numRecords)%(maxSteps)
-		print("RR" + str(len(l1Result)) + str(i))
 		results[r][i] = l1Result[i]
 
 	print("Actual Value: "+str(actual))

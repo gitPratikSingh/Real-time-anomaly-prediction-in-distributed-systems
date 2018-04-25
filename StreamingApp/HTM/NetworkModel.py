@@ -118,7 +118,7 @@ def run(network, disableTraining):
 	l1TpRegion = network.regions[_L1_TEMPORAL_MEMORY]
 	l1Classifier = network.regions[_L1_CLASSIFIER]
 	
-	if numRecords%NetworkUtils.saveFrequency == 0:
+	if numRecords%NetworkUtils.saveFrequency == 0 and disableTraining == False:
 		print("Saving the Model to file")
 		NetworkUtils.SaveNetwork(network, "network1.nta")
 	

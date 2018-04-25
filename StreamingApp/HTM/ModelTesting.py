@@ -91,7 +91,7 @@ def runModel(jsonData):
 	"""
 	
 	# Raise alarm only when both satisfy
-	if AnomalyScoreViolation > 0 and cpuSLOViolationPredictions > 0:
+	if AnomalyScoreViolation > 0 and cpuSLOViolationPredictions > 0 and float(AnomalyScoreViolation)/len(predictions)>0.30:
 		raiseAlarm(1)
 		anomaly = list()
 		anomaly.append(-1)

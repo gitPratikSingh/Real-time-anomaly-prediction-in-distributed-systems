@@ -13,7 +13,7 @@ _L1_SPATIAL_POOLER = "l1SpatialPoolerRegion"
 _L1_TEMPORAL_MEMORY = "l1TemporalMemoryRegion"
 _L1_CLASSIFIER = "l1Classifier"
 
-w, h = 8, 7
+w, h = 7, 7
 results = [[-1 for x in range(w)] for y in range(h)] 
 l1ErrorSum = [-1 for x in range(h)]
 
@@ -102,7 +102,7 @@ def createOneLevelNetwork(dataSource):
 	global l1ErrorSum
 	l1ErrorSum = [-1 for x in range(h)]
 	
-	print("Length: "+str(len(steps)))
+	print("Model Instantiated")
 	
 	return network
 

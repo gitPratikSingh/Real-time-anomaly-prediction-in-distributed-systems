@@ -57,16 +57,23 @@ def runModel(jsonData):
 		violation = 1
 	
 	rcount += 1
+	anomalywindow = list()
+	
 	
 	print("RunMethod" + str(jsonData))
 	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False)
-
+	anomalywindow.append(anomalyScore)
 	
+	for prediction in predictions:
+		x, y, z, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True)
+		anomalywindow.append(anomalyScore)
+		
+	if all(anomaly < _ANOMALY_SCORE for anomaly in anomalywindow) == False:
+		AnomalyScoreViolation = AnomalyScoreViolation + 1
+		
 	if all(prediction < _SLO_CPU for prediction in predictions) == False:
 		cpuSLOViolationPredictions=cpuSLOViolationPredictions+1
 	
-	if anomalyScore > _ANOMALY_SCORE:
-		AnomalyScoreViolation = AnomalyScoreViolation + 1
 	"""
 	actualVal, predictions, errorVal, anomalyScore = MultiLevelNetworkModel.runNetwork(model2.network, model2.dataSource, cpuMetric, True)
 	if all(prediction < _SLO_CPU for prediction in predictions) == False:

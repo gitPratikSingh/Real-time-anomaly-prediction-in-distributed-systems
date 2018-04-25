@@ -184,7 +184,7 @@ class kafkaRecordStream(RecordStreamIface):
 	if mem is not None:
 		line.append(mem)
 	
-	print("grabStreamData Called: "+str(line))
+	#print("grabStreamData Called: "+str(line))
 	return line
   
   def getNextRecord(self, useCache=True):

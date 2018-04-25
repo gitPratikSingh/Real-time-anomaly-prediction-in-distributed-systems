@@ -34,13 +34,13 @@ def runNetwork(network, dataSource, data, disableTraining):
 	#NetworkUtils.dataSource.data = data
 	dataSource.setData(data)
 	#dataSource.printData()
-	if disableTraining == 1:
+	if disableTraining == True:
 		temporalMemoryRegion = network.regions[_L1_TEMPORAL_MEMORY]
 		temporalMemoryRegion.setParameter("learningMode", False)
 		l1Classifier = network.regions[_L1_CLASSIFIER]
 		l1Classifier.setParameter('learningMode', False)
 		
-	return run(network)
+	return run(network, disableTraining)
     
 def createOneLevelNetwork(dataSource):
   
@@ -106,11 +106,13 @@ def createOneLevelNetwork(dataSource):
 	
 	return network
 
-def run(network):
+def run(network, disableTraining):
 	global numRecords
 	global l1ErrorSum
-
-	numRecords = numRecords + 1
+	
+	if disableTraining==False: 
+		numRecords = numRecords + 1
+	
 	sensorRegion = network.regions[_RECORD_SENSOR]
 	l1SpRegion = network.regions[_L1_SPATIAL_POOLER]
 	l1TpRegion = network.regions[_L1_TEMPORAL_MEMORY]
@@ -127,8 +129,9 @@ def run(network):
 	steps = l1Classifier.getSelf().stepsList
 
 	l1AnomalyScore = l1TpRegion.getOutputData("anomalyScore")[0]
-
-	print("record="+ str(numRecords))
+	
+	if disableTraining==False: 
+		print("record="+ str(numRecords))
 
 	maxSteps = len(steps)
 	for i in range(maxSteps):
@@ -138,13 +141,14 @@ def run(network):
 		
 		r = (steps[i]+numRecords)%(maxSteps)
 		results[r][i] = l1Result[i]
-
-	print("Actual Value: "+str(actual))
-	print("Predicted: "+ str(results[numRecords%(maxSteps)]))
-	print("Average Error: "+ str([x / numRecords for x in l1ErrorSum]))
-	print("Classifier Anomaly Score: "+ str(l1AnomalyScore))	
-	print("Current Predictions" + str(l1Result))
 	
+	if disableTraining==False: 
+		print("Actual Value: "+str(actual))
+		print("Predicted: "+ str(results[numRecords%(maxSteps)]))
+		print("Average Error: "+ str([x / numRecords for x in l1ErrorSum]))
+		print("Classifier Anomaly Score: "+ str(l1AnomalyScore))	
+		print("Current Predictions" + str(l1Result))
+		
 	predictions =results[numRecords%(maxSteps)]
 	errorVal = str([x / numRecords for x in l1ErrorSum])
 	

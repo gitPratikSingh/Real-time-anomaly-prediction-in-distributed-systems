@@ -39,7 +39,7 @@ def runNetwork(network, dataSource, data, disableTraining):
 	#NetworkUtils.dataSource.data = data
 	dataSource.setData(data)
 	#dataSource.printData()
-	if disableTraining == 1:
+	if disableTraining == True:
 		network.regions[_L1_TEMPORAL_MEMORY].setParameter("learningMode", False)
 		network.regions[_L1_CLASSIFIER].setParameter('learningMode', False)
 		network.regions[_L2_TEMPORAL_MEMORY].setParameter("learningMode", False)
@@ -113,21 +113,23 @@ def createMultiLevelNetwork(dataSource):
 	steps = l2Classifier.getSelf().stepsList
 	
 	# initialize the results matrix, after the classifer has been defined
-	w, h = len(steps), len(steps)+1
+	w, h = len(steps), len(steps)
 	global results
 	results = [[-1 for x in range(w)] for y in range(h)] 
 	global l2ErrorSum
 	l2ErrorSum = [-1 for x in range(h)]
 	
-	#print("Length: "+str(len(steps)))
+	print("2 level Model: Instantiated")
 	
 	return network
 
-def run(network):
+def run(network, disableTraining):
 	global numRecords
 	global l2ErrorSum
 
-	numRecords = numRecords + 1
+	if disableTraining == False:
+		numRecords = numRecords + 1
+		
 	sensorRegion = network.regions[_RECORD_SENSOR]
 	l2SpRegion = network.regions[_L2_SPATIAL_POOLER]
 	l2TpRegion = network.regions[_L2_TEMPORAL_MEMORY]
@@ -144,33 +146,28 @@ def run(network):
 	steps = l2Classifier.getSelf().stepsList
 
 	l2AnomalyScore = l2TpRegion.getOutputData("anomalyScore")[0]
-
-	print("record="+ str(numRecords))
+	
+	if disableTraining == False:
+		print("record="+ str(numRecords))
 
 	maxSteps = len(steps)
 	for i in range(maxSteps):
 		#shift the records
-		if results[numRecords%(maxSteps+1)][i] != -1:
-			l2ErrorSum[i] += math.fabs(results[numRecords%(maxSteps+1)][i] - actual)
+		if results[numRecords%(maxSteps)][i] != -1:
+			l2ErrorSum[i] += math.fabs(results[numRecords%(maxSteps)][i] - actual)
 		
-		r = (steps[i]+numRecords)%(maxSteps+1)
+		r = (steps[i]+numRecords)%(maxSteps)
 		results[r][i] = l2Result[i]
 
-	print("Actual Value: "+str(actual))
-	print("Predicted: "+ str(results[numRecords%(maxSteps+1)]))
-	print("Average Error: "+ str([x / numRecords for x in l2ErrorSum]))
-	print("Classifier Anomaly Score: "+ str(l2AnomalyScore))	
-	print("\n")
+	if disableTraining == False:
+		print("Actual Value: "+str(actual))
+		print("Predicted: "+ str(results[numRecords%(maxSteps)]))
+		print("Average Error: "+ str([x / numRecords for x in l2ErrorSum]))
+		print("Classifier Anomaly Score: "+ str(l2AnomalyScore))		
+		print("Current Predictions" + str(l2Result))
 	
-	print("Current Predictions" + str(l2Result))
-	
-	predictions =results[numRecords%(maxSteps+1)]
+	predictions =results[numRecords%(maxSteps)]
 	errorVal = str([x / numRecords for x in l2ErrorSum])
-	
-	print(predictions)
-	print(errorVal)
-	print(l2AnomalyScore)
-	print(actual)
 	
 	return str(actual), predictions, errorVal, l2AnomalyScore
 	

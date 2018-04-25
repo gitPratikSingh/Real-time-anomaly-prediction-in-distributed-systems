@@ -133,19 +133,19 @@ def run(network):
 	maxSteps = len(steps)
 	for i in range(maxSteps):
 		#shift the records
-		if results[numRecords%(maxSteps+1)][i] != -1:
-			l1ErrorSum[i] += math.fabs(results[numRecords%(maxSteps+1)][i] - actual)
+		if results[numRecords%(maxSteps)][i] != -1:
+			l1ErrorSum[i] += math.fabs(results[numRecords%(maxSteps)][i] - actual)
 		
 		r = (steps[i]+numRecords)%(maxSteps)
 		results[r][i] = l1Result[i]
 
 	print("Actual Value: "+str(actual))
-	print("Predicted: "+ str(results[numRecords%(maxSteps+1)]))
+	print("Predicted: "+ str(results[numRecords%(maxSteps)]))
 	print("Average Error: "+ str([x / numRecords for x in l1ErrorSum]))
 	print("Classifier Anomaly Score: "+ str(l1AnomalyScore))	
 	print("Current Predictions" + str(l1Result))
 	
-	predictions =results[numRecords%(maxSteps+1)]
+	predictions =results[numRecords%(maxSteps)]
 	errorVal = str([x / numRecords for x in l1ErrorSum])
 	
 	return str(actual), predictions, errorVal, l1AnomalyScore

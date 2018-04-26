@@ -63,56 +63,57 @@ def response_time_aggregator():
     aggregate_topic = 'aggregate'
     delay = 6
     with open("aggregate", "a+") as f:
-        try:
-            while True:
-                aggregate_producer = KafkaProducer(bootstrap_servers=[bootstrap_servers])
-                response_time_consumer = KafkaConsumer(response_time_topic,
-                                                       # auto_offset_reset='earliest',
-                                                       auto_offset_reset='latest',
-                                                       bootstrap_servers=[bootstrap_servers])
-                stats_consumer = KafkaConsumer(stats_topic,
-                                               # auto_offset_reset='earliest',
-                                               auto_offset_reset='latest',
-                                               bootstrap_servers=[bootstrap_servers])
-
+        while True:
+            try:
                 while True:
-                    # Consume stats every second
-                    msg = stats_consumer.next()
-                    message = msg.value.split(',')
-                    timestamps = insert_data(timestamp=int(message[0]),
-                                             cpu=int(message[1]),
-                                             mem=int(message[2]),
-                                             response_time=None)
+                    aggregate_producer = KafkaProducer(bootstrap_servers=[bootstrap_servers])
+                    response_time_consumer = KafkaConsumer(response_time_topic,
+                                                           # auto_offset_reset='earliest',
+                                                           auto_offset_reset='latest',
+                                                           bootstrap_servers=[bootstrap_servers])
+                    stats_consumer = KafkaConsumer(stats_topic,
+                                                   # auto_offset_reset='earliest',
+                                                   auto_offset_reset='latest',
+                                                   bootstrap_servers=[bootstrap_servers])
 
-                    # Consume responses for until the delay
-                    while len(timestamps) < delay:
-                        msg = response_time_consumer.next()
+                    while True:
+                        # Consume stats every second
+                        msg = stats_consumer.next()
                         message = msg.value.split(',')
-                        timestamps = insert_data(timestamp=int(message[1]),
-                                                 response_time=int(message[0]),
-                                                 cpu=None,
-                                                 mem=None)
-                    if len(timestamps) > delay - 1:
+                        timestamps = insert_data(timestamp=int(message[0]),
+                                                 cpu=int(message[1]),
+                                                 mem=int(message[2]),
+                                                 response_time=None)
 
-                        timestamp = min(timestamps)
-                        aggregate = data.pop(timestamp)
-                        aggregate["timestamp"] = timestamp
-                        if not aggregate['cpu']:
-                            raise KeyError
-                        if len(aggregate.keys()) == 7:  # Produce clean data
-                            try:
-                                aggregate["mean"] = aggregate['summation'] / aggregate['count']
-                            except ZeroDivisionError:
-                                aggregate["mean"] = 0
-                            jsondump = json.dumps(aggregate)
-                            aggregate_producer.send(aggregate_topic, jsondump)
-                            f.writelines(jsondump + "\n")
-                            print(jsondump + "\n")
+                        # Consume responses for until the delay
+                        while len(timestamps) < delay:
+                            msg = response_time_consumer.next()
+                            message = msg.value.split(',')
+                            timestamps = insert_data(timestamp=int(message[1]),
+                                                     response_time=int(message[0]),
+                                                     cpu=None,
+                                                     mem=None)
+                        if len(timestamps) > delay - 1:
 
-        except kafka.errors.NoBrokersAvailable:
-            pass
-        except KeyError:
-            pass
+                            timestamp = min(timestamps)
+                            aggregate = data.pop(timestamp)
+                            aggregate["timestamp"] = timestamp
+                            if not aggregate['cpu']:
+                                raise KeyError
+                            if len(aggregate.keys()) == 7:  # Produce clean data
+                                try:
+                                    aggregate["mean"] = aggregate['summation'] / aggregate['count']
+                                except ZeroDivisionError:
+                                    aggregate["mean"] = 0
+                                jsondump = json.dumps(aggregate)
+                                aggregate_producer.send(aggregate_topic, jsondump)
+                                f.writelines(jsondump + "\n")
+                                print(jsondump + "\n")
+
+            except kafka.errors.NoBrokersAvailable:
+                pass
+            except KeyError:
+                pass
 
 
 parser = argparse.ArgumentParser()

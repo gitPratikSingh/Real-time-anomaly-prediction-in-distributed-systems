@@ -27,6 +27,7 @@ _SLO_CPU=20
 _ANOMALY_SCORE=0.5
 _MAX_LEAD_TIME = 50
 _SLO_RESPONSE_TIME = 70
+_CONFIDENCE_LEVEL = 0.15
 
 predictionList = list()
 rcount=0
@@ -60,20 +61,18 @@ def runModel(jsonData):
 	anomalywindow = list()
 	
 	
-	print("RunMethod" + str(jsonData))
+	#print("RunMethod" + str(jsonData))
 	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False, True)
 	anomalywindow.append(anomalyScore)
 	
 	for prediction in predictions:
 		x, y, z, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True, True)
 		anomalywindow.append(anomalyScore)
-		
-	if all(anomaly < _ANOMALY_SCORE for anomaly in anomalywindow) == False:
-		AnomalyScoreViolation = AnomalyScoreViolation + 1
-		
-	if all(prediction < _SLO_CPU for prediction in predictions) == False:
-		cpuSLOViolationPredictions=cpuSLOViolationPredictions+1
 	
+	for anomaly in anomalywindow
+		if anomaly > _ANOMALY_SCORE
+			AnomalyScoreViolation = AnomalyScoreViolation + 1
+		
 	"""
 	actualVal, predictions, errorVal, anomalyScore = MultiLevelNetworkModel.runNetwork(model2.network, model2.dataSource, cpuMetric, True)
 	if all(prediction < _SLO_CPU for prediction in predictions) == False:
@@ -90,8 +89,8 @@ def runModel(jsonData):
 		AnomalyScoreViolation = AnomalyScoreViolation + 1
 	"""
 	
-	# Raise alarm only when both satisfy
-	if AnomalyScoreViolation > 0 and cpuSLOViolationPredictions > 0 and float(AnomalyScoreViolation)/len(predictions)>0.30:
+	# Raise alarm only when this satisfy
+	if float(AnomalyScoreViolation)/len(predictions) > _CONFIDENCE_LEVEL:
 		raiseAlarm(1)
 		anomaly = list()
 		anomaly.append(-1)
@@ -111,7 +110,7 @@ def runModel(jsonData):
 	if violation > 0:
 		processpredictionList('A', rcount)
 		timenow = int(time.time())
-		print("Alarm raised at "+str(timenow)+" for record number "+ str(rcount))
+		print("SLO violation at "+str(timenow)+" for record number "+ str(rcount))
 	else:
 		processpredictionList('N', rcount)
 	

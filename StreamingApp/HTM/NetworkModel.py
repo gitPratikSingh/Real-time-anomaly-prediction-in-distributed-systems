@@ -130,7 +130,7 @@ def run(network, disableTraining, isTesting):
 
 	l1AnomalyScore = l1TpRegion.getOutputData("anomalyScore")[0]
 	
-	if disableTraining==False: 
+	if disableTraining==False and isTesting == False: 
 		print("record="+ str(numRecords))
 
 	maxSteps = len(steps)

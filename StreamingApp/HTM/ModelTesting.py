@@ -69,8 +69,8 @@ def runModel(jsonData):
 		x, y, z, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True, True)
 		anomalywindow.append(anomalyScore)
 	
-	for anomaly in anomalywindow
-		if anomaly > _ANOMALY_SCORE
+	for anomaly in anomalywindow:
+		if anomaly > _ANOMALY_SCORE:
 			AnomalyScoreViolation = AnomalyScoreViolation + 1
 		
 	"""

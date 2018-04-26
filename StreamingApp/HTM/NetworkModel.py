@@ -106,7 +106,7 @@ def createOneLevelNetwork(dataSource):
 	
 	return network
 
-def run(network, disableTraining):
+def run(network, disableTraining, isTesting):
 	global numRecords
 	global l1ErrorSum
 	
@@ -142,14 +142,11 @@ def run(network, disableTraining):
 		r = (steps[i]+numRecords)%(maxSteps)
 		results[r][i] = l1Result[i]
 	
-	if disableTraining==False: 
+	if disableTraining==False and isTesting == False:
 		print("Actual Value: "+str(actual))
 		print("Predicted: "+ str(results[numRecords%(maxSteps)]))
 		print("Classifier Anomaly Score: "+ str(l1AnomalyScore))	
-		
-		if isTesting == False:
-			print("Average Error: "+ str([x / numRecords for x in l1ErrorSum]))
-		
+		print("Average Error: "+ str([x / numRecords for x in l1ErrorSum]))
 		print("Current Predictions" + str(l1Result))
 		
 	predictions =results[numRecords%(maxSteps)]

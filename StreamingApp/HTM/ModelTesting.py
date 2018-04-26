@@ -24,10 +24,10 @@ model1.tn = 0
 model1.fn = 0
 
 _SLO_CPU=20
-_ANOMALY_SCORE=0.85
+_ANOMALY_SCORE=0.90
 _MAX_LEAD_TIME = 50
 _SLO_RESPONSE_TIME = 70
-_CONFIDENCE_LEVEL = 0.85
+_CONFIDENCE_LEVEL = 0.90
 
 predictionList = list()
 rcount=0
@@ -93,7 +93,7 @@ def runModel(jsonData):
 	
 	# Raise alarm only when this satisfy
 	if AnomalyScoreViolation > 0:
-		raiseAlarm(1, AnomalyScoreViolation)
+		raiseAlarm(1, rcount)
 		anomaly = list()
 		anomaly.append(-1)
 		anomaly.append('A')
@@ -117,8 +117,8 @@ def runModel(jsonData):
 		processpredictionList('N', rcount)
 	
 	
-def raiseAlarm(modelId, AnomalyScoreViolation):
-	print("Alarm raised by - Model " +str(modelId) + " at "+ str(int(time.time())))
+def raiseAlarm(modelId, recId):
+	print("Alarm raised by - Model " +str(modelId) + " at "+ str(int(time.time()))+" for recID "+ str(recId))
 	
 def processpredictionList(state, rcount):
 	global predictionList
@@ -150,7 +150,7 @@ def getModelStats():
 	fp=0
 	fn=0
 	tn=0
-	for item in predictionList:
+	for item in predictionList[:-_MAX_LEAD_TIME]:
 		if item[3] == 'TP':
 			tp += 1
 		if item[3] == 'TN':
@@ -190,10 +190,16 @@ def main():
 	
 	start = datetime.datetime.now()
 	
+	count = 0
 	if len(sys.argv)==1:
-		consumer = KafkaConsumer('HTMTestingData', group_id="TEST", bootstrap_servers=var_bootstrap_servers)
+		consumer = KafkaConsumer('aggregate', bootstrap_servers=var_bootstrap_servers, auto_offset_reset='latest')
 		for msg in consumer:
 			runModel(msg.value)
+			count += 1
+			
+			if count%60 == 0:
+				getModelStats()
+
 	else:
 		with open(_FILE_PATH, 'r') as f:
 			for line in f:

@@ -90,7 +90,8 @@ def runModel(jsonData):
 	"""
 	
 	# Raise alarm only when this satisfy
-	if float(AnomalyScoreViolation)/len(predictions) > _CONFIDENCE_LEVEL:
+	if float(AnomalyScoreViolation)/len(anomalywindow) > _CONFIDENCE_LEVEL:
+		print(anomalywindow)
 		raiseAlarm(1, AnomalyScoreViolation)
 		anomaly = list()
 		anomaly.append(-1)
@@ -116,7 +117,7 @@ def runModel(jsonData):
 	
 	
 def raiseAlarm(modelId, AnomalyScoreViolation):
-	print("Alarm raised by - Model " +str(modelId) + " at "+ str(int(time.time())) +str(AnomalyScoreViolation))
+	print("Alarm raised by - Model " +str(modelId) + " at "+ str(int(time.time())) +"," + str(AnomalyScoreViolation))
 	
 def processpredictionList(state, rcount):
 	global predictionList

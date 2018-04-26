@@ -31,7 +31,7 @@ def runModel(jsonData):
 	memMetric = float(memMetric)
 	
 	start = datetime.datetime.now()
-	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False)
+	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False, False)
 	end = datetime.datetime.now()
 	elapsed = end - start
 	model1.outputFile.write(str(actualVal) + "|" + str(predictions) + "|" + errorVal + "|" + str(anomalyScore) + "|" +str(elapsed.microseconds/1000) +"\n")

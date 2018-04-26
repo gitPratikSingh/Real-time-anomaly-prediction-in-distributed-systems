@@ -110,8 +110,7 @@ def run(network, disableTraining, isTesting):
 	global numRecords
 	global l1ErrorSum
 	
-	if disableTraining==False: 
-		numRecords = numRecords + 1
+	numRecords = numRecords + 1
 	
 	sensorRegion = network.regions[_RECORD_SENSOR]
 	l1SpRegion = network.regions[_L1_SPATIAL_POOLER]

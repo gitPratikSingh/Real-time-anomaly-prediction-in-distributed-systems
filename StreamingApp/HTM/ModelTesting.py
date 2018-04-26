@@ -12,7 +12,7 @@ import time
 from nupic.engine import Network
 
 _RECORD_SENSOR = "sensorRegion"
-_FILE_PATH = "../../ML/TrainingData.txt"
+_FILE_PATH = "../../ML/TestingData.txt"
 
 model1 = lambda: None
 model2 = lambda: None
@@ -24,10 +24,10 @@ model1.tn = 0
 model1.fn = 0
 
 _SLO_CPU=20
-_ANOMALY_SCORE=0.5
+_ANOMALY_SCORE=0.85
 _MAX_LEAD_TIME = 50
 _SLO_RESPONSE_TIME = 70
-_CONFIDENCE_LEVEL = 0.15
+_CONFIDENCE_LEVEL = 0.85
 
 predictionList = list()
 rcount=0
@@ -62,12 +62,14 @@ def runModel(jsonData):
 	
 	
 	#print("RunMethod" + str(jsonData))
-	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False, True)
+	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True, True)
 	anomalywindow.append(anomalyScore)
 	
+	"""
 	for prediction in predictions:
 		x, y, z, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True, True)
 		anomalywindow.append(anomalyScore)
+	"""
 	
 	for anomaly in anomalywindow:
 		if anomaly > _ANOMALY_SCORE:
@@ -90,8 +92,7 @@ def runModel(jsonData):
 	"""
 	
 	# Raise alarm only when this satisfy
-	if float(AnomalyScoreViolation)/len(anomalywindow) > _CONFIDENCE_LEVEL:
-		print(anomalywindow)
+	if AnomalyScoreViolation > 0:
 		raiseAlarm(1, AnomalyScoreViolation)
 		anomaly = list()
 		anomaly.append(-1)
@@ -117,7 +118,7 @@ def runModel(jsonData):
 	
 	
 def raiseAlarm(modelId, AnomalyScoreViolation):
-	print("Alarm raised by - Model " +str(modelId) + " at "+ str(int(time.time())) +"," + str(AnomalyScoreViolation))
+	print("Alarm raised by - Model " +str(modelId) + " at "+ str(int(time.time())))
 	
 def processpredictionList(state, rcount):
 	global predictionList
@@ -159,7 +160,7 @@ def getModelStats():
 		if item[3] == 'FN':
 			fn += 1
 	
-	print("TP: "+str(tp) + "FP: "+str(fp) + "TN: "+str(tn) + "FN: "+str(fn))	
+	print("TP: "+str(tp) + " FP: "+str(fp) + " TN: "+str(tn) + " FN: "+str(fn))	
 	print("Model accuracy" +str(float((tp + tn))/(tp + tn + fn + fp)))
 	
 def initModels():

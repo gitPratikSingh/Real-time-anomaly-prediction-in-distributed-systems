@@ -1,4 +1,5 @@
 import time
+import threading
 
 def cpuLeak():
         # takes up cpu cycles incrementally
@@ -25,8 +26,22 @@ def cpuLeak():
                 time.sleep(sltime)
 
                 if(percent==100):
-                        break
+					while 1:
+						x=x*2
 
 
 if __name__ == "__main__":
-        cpuLeak()
+	try:
+        print("In main")
+		for th in range(10):
+			thread_first = threading.Thread(target=cpuLeak)
+			thread_first.daemon = True
+			thread_first.start()
+        
+        thread_first.join()
+
+    except KeyboardInterrupt:
+        sys.exit(0)
+
+			
+		

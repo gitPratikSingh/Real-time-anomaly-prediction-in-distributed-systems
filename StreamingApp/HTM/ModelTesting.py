@@ -31,7 +31,7 @@ _CONFIDENCE_LEVEL = 0.90
 
 predictionList = list()
 rcount=0
-def runModel(jsonData):
+def runModel(jsonData, printflag):
 	global model1
 	global model2
 	global model3
@@ -93,7 +93,9 @@ def runModel(jsonData):
 	
 	# Raise alarm only when this satisfy
 	if AnomalyScoreViolation > 0 and rcount > 1:
-		raiseAlarm(1, rcount)
+		if printflag == True:
+			raiseAlarm(1, rcount)
+
 		anomaly = list()
 		anomaly.append(-1)
 		anomaly.append('A')
@@ -113,7 +115,8 @@ def runModel(jsonData):
 	if violation > 0:
 		processpredictionList('A', rcount)
 		timenow = int(time.time())
-		print("SLO violation at "+str(timenow)+" for record number "+ str(rcount))
+		if printflag == True:
+			print("SLO violation at "+str(timenow)+" for record number "+ str(rcount))
 	else:
 		processpredictionList('N', rcount)
 	
@@ -212,7 +215,7 @@ def main():
 	if len(sys.argv)==1:
 		consumer = KafkaConsumer('aggregate', bootstrap_servers=var_bootstrap_servers, auto_offset_reset='latest')
 		for msg in consumer:
-			runModel(msg.value)
+			runModel(msg.value, True)
 			count += 1
 			
 			if count%60 == 0:
@@ -221,7 +224,7 @@ def main():
 	else:
 		with open(_FILE_PATH, 'r') as f:
 			for line in f:
-				runModel(line)
+				runModel(line, False)
 	
 	end = datetime.datetime.now()
 	

@@ -92,7 +92,7 @@ def runModel(jsonData):
 	"""
 	
 	# Raise alarm only when this satisfy
-	if AnomalyScoreViolation > 0:
+	if AnomalyScoreViolation > 0 and rcount > 1:
 		raiseAlarm(1, rcount)
 		anomaly = list()
 		anomaly.append(-1)
@@ -135,7 +135,17 @@ def processpredictionList(state, rcount):
 					if rcount - item[2] <= _MAX_LEAD_TIME:
 						item[3] = 'TP'
 						item[0] = 0
-						item[4] = _MAX_LEAD_TIME - rcount
+						item[4] = _MAX_LEAD_TIME - (rcount - item[2])
+						
+						if rcount - _MAX_LEAD_TIME>0: 
+							start = rcount - _MAX_LEAD_TIME 
+						else: 
+							start = 0
+ 
+						for nelem in predictionList[start:rcount]:				
+							if nelem[3] == 'FN' :
+								nelem[3] = 'TN'
+								
 			else:
 				if item[1] == 'A':
 					if rcount - item[2] > _MAX_LEAD_TIME:

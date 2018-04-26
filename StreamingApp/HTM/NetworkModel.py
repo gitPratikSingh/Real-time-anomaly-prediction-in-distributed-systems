@@ -29,7 +29,7 @@ def BuildNetwork():
 	network = createOneLevelNetwork(dataSource)
 	return dataSource, network
     
-def runNetwork(network, dataSource, data, disableTraining):
+def runNetwork(network, dataSource, data, disableTraining, isTesting):
 	
 	#NetworkUtils.dataSource.data = data
 	dataSource.setData(data)
@@ -40,7 +40,7 @@ def runNetwork(network, dataSource, data, disableTraining):
 		l1Classifier = network.regions[_L1_CLASSIFIER]
 		l1Classifier.setParameter('learningMode', False)
 		
-	return run(network, disableTraining)
+	return run(network, disableTraining, isTesting)
     
 def createOneLevelNetwork(dataSource):
   
@@ -145,8 +145,11 @@ def run(network, disableTraining):
 	if disableTraining==False: 
 		print("Actual Value: "+str(actual))
 		print("Predicted: "+ str(results[numRecords%(maxSteps)]))
-		print("Average Error: "+ str([x / numRecords for x in l1ErrorSum]))
 		print("Classifier Anomaly Score: "+ str(l1AnomalyScore))	
+		
+		if isTesting == False:
+			print("Average Error: "+ str([x / numRecords for x in l1ErrorSum]))
+		
 		print("Current Predictions" + str(l1Result))
 		
 	predictions =results[numRecords%(maxSteps)]

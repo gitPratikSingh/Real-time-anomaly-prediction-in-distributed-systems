@@ -61,11 +61,11 @@ def runModel(jsonData):
 	
 	
 	print("RunMethod" + str(jsonData))
-	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False)
+	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False, True)
 	anomalywindow.append(anomalyScore)
 	
 	for prediction in predictions:
-		x, y, z, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True)
+		x, y, z, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True, True)
 		anomalywindow.append(anomalyScore)
 		
 	if all(anomaly < _ANOMALY_SCORE for anomaly in anomalywindow) == False:

@@ -99,6 +99,7 @@ def runModel(jsonData):
 		anomaly.append('A')
 		anomaly.append(rcount)
 		anomaly.append('TP')
+		anomaly.append(0)
 		predictionList.append(anomaly)
 	else:
 		normal = list()
@@ -134,6 +135,7 @@ def processpredictionList(state, rcount):
 					if rcount - item[2] <= _MAX_LEAD_TIME:
 						item[3] = 'TP'
 						item[0] = 0
+						item[4] = _MAX_LEAD_TIME - rcount
 			else:
 				if item[1] == 'A':
 					if rcount - item[2] > _MAX_LEAD_TIME:
@@ -150,9 +152,11 @@ def getModelStats():
 	fp=0
 	fn=0
 	tn=0
+	leadTime = 0.0
 	for item in predictionList[:-_MAX_LEAD_TIME]:
 		if item[3] == 'TP':
 			tp += 1
+			leadTime += item[4]
 		if item[3] == 'TN':
 			tn += 1
 		if item[3] == 'FP':
@@ -160,7 +164,11 @@ def getModelStats():
 		if item[3] == 'FN':
 			fn += 1
 	
-	print("TP: "+str(tp) + " FP: "+str(fp) + " TN: "+str(tn) + " FN: "+str(fn))	
+	print("TP: "+str(tp) + " FP: "+str(fp) + " TN: "+str(tn) + " FN: "+str(fn))
+
+	if tp != 0:
+		print("Avg leadtime "+str(leadTime/tp))	
+
 	print("Model accuracy" +str(float((tp + tn))/(tp + tn + fn + fp)))
 	
 def initModels():

@@ -13,8 +13,8 @@ def cpuLeak():
 			esCpu = ss + (float)(percent*10)
 
 			print("compute Step"+str(percent))
-			print(ss)
-			print(esCpu)
+			#print(ss)
+			#print(esCpu)
 
 			# compute for percent fraction of CPU
 			while (time.time()*1000) < esCpu:
@@ -22,8 +22,10 @@ def cpuLeak():
 
 			#sleep for the remaining time
 			sltime = (float)(es - (int)(time.time()*1000))/1000
-			print(sltime)
-			time.sleep(sltime)
+			#print(sltime)
+			
+                        if sltime>0:
+                            time.sleep(sltime)
 
 			if(percent==100):
 				while 1:
@@ -32,13 +34,16 @@ def cpuLeak():
 
 if __name__ == "__main__":
 	try:
-		print("In main")
+	    print("In main")
+            while 1:
 		for th in range(10):
-			thread_first = threading.Thread(target=cpuLeak)
-			thread_first.daemon = True
-			thread_first.start()
-        
-		thread_first.join()
+	            thread_first = threading.Thread(target=cpuLeak)
+    		    thread_first.daemon = True
+		    thread_first.start()
+                    
+                time.sleep(5)
+		
+            thread_first.join()
 	
 	except KeyboardInterrupt:
 		sys.exit(0)

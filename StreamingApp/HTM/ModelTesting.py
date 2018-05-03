@@ -29,7 +29,7 @@ _SLO_RESPONSE_TIME = 70
 
 predictionList = list()
 rcount=0
-def runModel(jsonData):
+def runModel(jsonData, printflag):
 	global model1
 	global model2
 	global model3
@@ -74,13 +74,16 @@ def runModel(jsonData):
 		
 	
 	# Raise alarm only when this satisfy
-	if AnomalyScoreViolation > 0:
-		raiseAlarm(1, AnomalyScoreViolation)
+	if AnomalyScoreViolation > 0 and rcount > 1:
+		if printflag == True:
+			raiseAlarm(1, rcount)
+
 		anomaly = list()
 		anomaly.append(-1)
 		anomaly.append('A')
 		anomaly.append(rcount)
 		anomaly.append('TP')
+		anomaly.append(0)
 		predictionList.append(anomaly)
 	else:
 		normal = list()
@@ -94,13 +97,14 @@ def runModel(jsonData):
 	if violation > 0:
 		processpredictionList('A', rcount)
 		timenow = int(time.time())
-		print("SLO violation at "+str(timenow)+" for record number "+ str(rcount))
+		if printflag == True:
+			print("SLO violation at "+str(timenow)+" for record number "+ str(rcount))
 	else:
 		processpredictionList('N', rcount)
 	
 	
-def raiseAlarm(modelId, AnomalyScoreViolation):
-	print("Alarm raised by - Model " +str(modelId) + " at "+ str(int(time.time())))
+def raiseAlarm(modelId, recId):
+	print("Alarm raised by - Model " +str(modelId) + " at "+ str(int(time.time()))+" for recID "+ str(recId))
 	
 def processpredictionList(state, rcount):
 	global predictionList
@@ -116,6 +120,17 @@ def processpredictionList(state, rcount):
 					if rcount - item[2] <= _MAX_LEAD_TIME:
 						item[3] = 'TP'
 						item[0] = 0
+						item[4] = _MAX_LEAD_TIME - (rcount - item[2])
+						
+						if rcount - _MAX_LEAD_TIME>0: 
+							start = rcount - _MAX_LEAD_TIME 
+						else: 
+							start = 0
+ 
+						for nelem in predictionList[start:rcount]:				
+							if nelem[3] == 'FN' :
+								nelem[3] = 'TN'
+								
 			else:
 				if item[1] == 'A':
 					if rcount - item[2] > _MAX_LEAD_TIME:
@@ -132,9 +147,11 @@ def getModelStats():
 	fp=0
 	fn=0
 	tn=0
-	for item in predictionList:
+	leadTime = 0.0
+	for item in predictionList[:-_MAX_LEAD_TIME]:
 		if item[3] == 'TP':
 			tp += 1
+			leadTime += item[4]
 		if item[3] == 'TN':
 			tn += 1
 		if item[3] == 'FP':
@@ -142,7 +159,11 @@ def getModelStats():
 		if item[3] == 'FN':
 			fn += 1
 	
-	print("TP: "+str(tp) + " FP: "+str(fp) + " TN: "+str(tn) + " FN: "+str(fn))	
+	print("TP: "+str(tp) + " FP: "+str(fp) + " TN: "+str(tn) + " FN: "+str(fn))
+
+	if tp != 0:
+		print("Avg leadtime "+str(leadTime/tp))	
+
 	print("Model accuracy" +str(float((tp + tn))/(tp + tn + fn + fp)))
 	
 def initModels():
@@ -172,14 +193,20 @@ def main():
 	
 	start = datetime.datetime.now()
 	
+	count = 0
 	if len(sys.argv)==1:
-		consumer = KafkaConsumer('HTMTestingData', group_id="TEST", bootstrap_servers=var_bootstrap_servers)
+		consumer = KafkaConsumer('aggregate', bootstrap_servers=var_bootstrap_servers, auto_offset_reset='latest')
 		for msg in consumer:
-			runModel(msg.value)
+			runModel(msg.value, True)
+			count += 1
+			
+			if count%60 == 0:
+				getModelStats()
+
 	else:
 		with open(_FILE_PATH, 'r') as f:
 			for line in f:
-				runModel(line)
+				runModel(line, False)
 	
 	end = datetime.datetime.now()
 	

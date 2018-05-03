@@ -23,11 +23,9 @@ model1.fp = 0
 model1.tn = 0
 model1.fn = 0
 
-_SLO_CPU=20
 _ANOMALY_SCORE=0.85
 _MAX_LEAD_TIME = 50
 _SLO_RESPONSE_TIME = 70
-_CONFIDENCE_LEVEL = 0.85
 
 predictionList = list()
 rcount=0
@@ -61,35 +59,19 @@ def runModel(jsonData):
 	anomalywindow = list()
 	
 	
-	#print("RunMethod" + str(jsonData))
 	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True, True)
 	anomalywindow.append(anomalyScore)
 	
-	"""
+	# find the future anomaly scores as well
 	for prediction in predictions:
-		x, y, z, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True, True)
+		x, y, z, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False, False)
 		anomalywindow.append(anomalyScore)
-	"""
+	
 	
 	for anomaly in anomalywindow:
 		if anomaly > _ANOMALY_SCORE:
 			AnomalyScoreViolation = AnomalyScoreViolation + 1
 		
-	"""
-	actualVal, predictions, errorVal, anomalyScore = MultiLevelNetworkModel.runNetwork(model2.network, model2.dataSource, cpuMetric, True)
-	if all(prediction < _SLO_CPU for prediction in predictions) == False:
-		cpuSLOViolationPredictions=cpuSLOViolationPredictions+1
-	
-	if anomalyScore > _ANOMALY_SCORE:
-		AnomalyScoreViolation = AnomalyScoreViolation + 1
-	
-	actualVal, anomalyScore = MultiLevelNetworkAnomaly.runNetwork(model3.network, model3.dataSource, cpuMetric, memMetric, True)
-	if all(prediction < _SLO_CPU for prediction in predictions) == False:
-		cpuSLOViolationPredictions=cpuSLOViolationPredictions+1
-	
-	if anomalyScore > _ANOMALY_SCORE:
-		AnomalyScoreViolation = AnomalyScoreViolation + 1
-	"""
 	
 	# Raise alarm only when this satisfy
 	if AnomalyScoreViolation > 0:

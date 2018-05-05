@@ -1,0 +1,76 @@
+# Parameters of the model to be created.
+
+# Author: Pratik Singh
+# Description: Model params
+
+modelParams:
+
+  inferenceType: TemporalMultiStep
+
+  # Parameters of the Sensor region
+  sensorParams:
+    verbosity: 0
+    
+    # List of encoders and their parameters.
+    encoders:
+      cpu_metric:
+        fieldname: cpu_metric
+        name: cpu_metric
+        resolution: 0.88
+        seed: 1
+        type: RandomDistributedScalarEncoder
+        
+    sensorAutoReset: null
+
+
+  # Controls whether the Spatial Pooler (SP) region is enabled.
+  spEnable: true
+  spParams:
+    inputWidth: 946
+    columnCount: 2048
+    spVerbosity: 0
+    spatialImp: cpp
+    globalInhibition: 1
+    localAreaDensity: -1.0
+    numActiveColumnsPerInhArea: 40
+    seed: 1956
+    potentialPct: 0.85
+    synPermConnected: 0.1
+    synPermActiveInc: 0.04
+    synPermInactiveDec: 0.005
+    boostStrength: 3.0
+
+  # Controls whether the Temporal Memory (TM) region is enabled.
+  tmEnable: true
+  tmParams:
+    verbosity: 0
+    columnCount: 2048
+    cellsPerColumn: 32
+    inputWidth: 2048
+    seed: 1960
+    temporalImp: cpp
+    newSynapseCount: 20
+    initialPerm: 0.21
+    permanenceInc: 0.1
+    permanenceDec: 0.1
+    maxAge: 0
+    globalDecay: 0.0
+    maxSynapsesPerSegment: 32
+    maxSegmentsPerCell: 128
+    minThreshold: 12
+    activationThreshold: 16
+    outputType: normal
+    pamLength: 1
+
+  # Classifier parameters. For detailed descriptions of each parameter, see
+  # the API docs for nupic.algorithms.sdr_classifier.SDRClassifier.
+  clParams:
+    verbosity: 0
+    regionName: SDRClassifierRegion
+    alpha: 0.1
+    steps: '1,5'
+    maxCategoryCount: 1000
+    implementation: cpp
+
+  # If set, don't create the SP network unless the user requests SP metrics.
+  trainSPNetOnlyIfRequested: false

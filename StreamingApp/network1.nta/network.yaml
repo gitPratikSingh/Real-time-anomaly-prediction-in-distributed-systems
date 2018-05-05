@@ -1,0 +1,67 @@
+Version: 2
+Regions:
+  - name: sensorRegion
+    nodeType: py.RecordSensor
+    dimensions:
+      - 1
+    phases:
+      - 0
+    label: R0
+  - name: l1SpatialPoolerRegion
+    nodeType: py.SPRegion
+    dimensions:
+      - 1
+    phases:
+      - 1
+    label: R1
+  - name: l1TemporalMemoryRegion
+    nodeType: py.TMRegion
+    dimensions:
+      - 1
+    phases:
+      - 2
+    label: R2
+  - name: l1Classifier
+    nodeType: py.SDRClassifierRegion
+    dimensions:
+      - 1
+    phases:
+      - 3
+    label: R3
+Links:
+  - type: UniformLink
+    params: ""
+    srcRegion: sensorRegion
+    srcOutput: dataOut
+    destRegion: l1SpatialPoolerRegion
+    destInput: bottomUpIn
+  - type: UniformLink
+    params: ""
+    srcRegion: l1SpatialPoolerRegion
+    srcOutput: bottomUpOut
+    destRegion: l1TemporalMemoryRegion
+    destInput: bottomUpIn
+  - type: UniformLink
+    params: ""
+    srcRegion: sensorRegion
+    srcOutput: actValueOut
+    destRegion: l1Classifier
+    destInput: actValueIn
+  - type: UniformLink
+    params: ""
+    srcRegion: l1TemporalMemoryRegion
+    srcOutput: bottomUpOut
+    destRegion: l1Classifier
+    destInput: bottomUpIn
+  - type: UniformLink
+    params: ""
+    srcRegion: sensorRegion
+    srcOutput: bucketIdxOut
+    destRegion: l1Classifier
+    destInput: bucketIdxIn
+  - type: UniformLink
+    params: ""
+    srcRegion: sensorRegion
+    srcOutput: categoryOut
+    destRegion: l1Classifier
+    destInput: categoryIn

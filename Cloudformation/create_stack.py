@@ -1,3 +1,6 @@
+# Author: Anirudha Tambolkar
+# Description: Creates stack on AWS from the template generated using template.py
+
 import boto3
 import subprocess
 import time

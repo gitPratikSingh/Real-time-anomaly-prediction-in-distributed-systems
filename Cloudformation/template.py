@@ -1,3 +1,18 @@
+# Author: Anirudha Tambolkar
+# Description:  This is infrastructure as code. Creates template.json used by create_stack.py
+#               Resources Created:  a) VPC
+#                                   b) gateway
+#                                   c) route tables and routes
+#                                   d) public and private subnets
+#                                   e) Security groups
+#                                   f) Multiple Instances:
+#                                            1) NAT
+#                                            2) Kafka
+#                                            3) Rubis database
+#                                            4) Rubis webserver
+#                                            5) Rubis clients
+#                                            6) HTM engine
+
 import troposphere.ec2 as ec2
 import troposphere.cloudformation as cfn
 import troposphere.autoscaling as autoscaling
@@ -57,7 +72,7 @@ t = Template()
 t.add_version("2010-09-09")
 t.add_description(description)
 
-
+# VPC Parameters
 vpc_cidr = t.add_parameter(Parameter(
     'VPCCIDR',
     Default=cidrs['vpc'],
@@ -79,6 +94,7 @@ private_subnet_cidr = t.add_parameter(Parameter(
     Default=cidrs['private_subnet']
 ))
 
+# VPC resource
 vpc = t.add_resource(ec2.VPC(
     "VPC",
     CidrBlock=Ref(vpc_cidr),
@@ -89,6 +105,7 @@ vpc = t.add_resource(ec2.VPC(
     )
 ))
 
+# public subnet cidr
 public_subnet = t.add_resource(ec2.Subnet(
     'PublicSubnet',
     CidrBlock=Ref(public_subnet_cidr),
@@ -100,6 +117,7 @@ public_subnet = t.add_resource(ec2.Subnet(
       )
 ))
 
+# private subnet cidr
 private_subnet = t.add_resource(ec2.Subnet(
     'PrivateSubnet',
     CidrBlock=Ref(private_subnet_cidr),
@@ -111,6 +129,7 @@ private_subnet = t.add_resource(ec2.Subnet(
       )
 ))
 
+# Internet Gateway
 igw = t.add_resource(ec2.InternetGateway(
     "InternetGateway",
     Tags=Tags(
@@ -118,12 +137,14 @@ igw = t.add_resource(ec2.InternetGateway(
       )
 ))
 
+# Attach gateway to the VPC
 igw_vpc_attachment = t.add_resource(ec2.VPCGatewayAttachment(
     "InternetGatewayAttachment",
     InternetGatewayId=Ref(igw),
     VpcId=Ref(vpc)
 ))
 
+# Public Route Table
 public_route_table = t.add_resource(ec2.RouteTable(
     "PublicRouteTable",
     VpcId=Ref(vpc),
@@ -132,12 +153,14 @@ public_route_table = t.add_resource(ec2.RouteTable(
     )
 ))
 
+# Attach public Route table to public subnet
 public_route_association = t.add_resource(ec2.SubnetRouteTableAssociation(
     'PublicRouteAssociation',
     SubnetId=Ref(public_subnet),
     RouteTableId=Ref(public_route_table)
 ))
 
+# Add route to the route table
 default_public_route = t.add_resource(ec2.Route(
     'PublicDefaultRoute',
     RouteTableId=Ref(public_route_table),
@@ -145,6 +168,7 @@ default_public_route = t.add_resource(ec2.Route(
     GatewayId=Ref(igw)
 ))
 
+# Private route table
 private_route_table = t.add_resource(ec2.RouteTable(
     'PrivateRouteTable',
     VpcId=Ref(vpc),
@@ -153,12 +177,14 @@ private_route_table = t.add_resource(ec2.RouteTable(
     )
 ))
 
+# Associate private route table with private subnet
 private_route_association = t.add_resource(ec2.SubnetRouteTableAssociation(
     'PrivateRouteAssociation',
     SubnetId=Ref(private_subnet),
     RouteTableId=Ref(private_route_table)
 ))
 
+# Create Security group for NAT
 nat_security_group = t.add_resource(ec2.SecurityGroup(
     'NatSecurityGroup',
     GroupDescription='Nat security group',
@@ -184,6 +210,7 @@ nat_security_group = t.add_resource(ec2.SecurityGroup(
     ]
 ))
 
+# NAT Instance metadata
 nat_instance_metadata = autoscaling.Metadata(
     cfn.Init({
         'config': cfn.InitConfig(
@@ -228,6 +255,12 @@ nat_instance_metadata = autoscaling.Metadata(
                             '/etc/cfn/cfn-hup.conf',
                             '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
                         ])})})}))
+
+# Create NAT instance
+# This node acts as
+# 1. public facing entity,
+# 2. forwards web traffic from Kafka and Rubis webserver
+# 3. Aggregator: Consumes from Response Time and Metrics topics and produce to Aggregate topic
 
 nat_instance = t.add_resource(ec2.Instance(
     'NatInstance',
@@ -299,6 +332,7 @@ nat_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "Nat"]))
 ))
 
+# Create default private route for private route table
 default_private_route = t.add_resource(ec2.Route(
     'PrivateDefaultRoute',
     RouteTableId=Ref(private_route_table),
@@ -307,6 +341,7 @@ default_private_route = t.add_resource(ec2.Route(
     DependsOn=["NatInstance"]
 ))
 
+# Security groups for all instances in private subnet
 instance_security_group = t.add_resource(ec2.SecurityGroup(
     'InstanceSecurityGroup',
     GroupDescription='Instance security group',
@@ -333,6 +368,7 @@ instance_security_group = t.add_resource(ec2.SecurityGroup(
 ))
 
 
+# Instance metadata creation for all the instances other than NAT
 def get_instance_metadata(instance_name):
     return autoscaling.Metadata(
         cfn.Init({
@@ -383,6 +419,7 @@ def get_instance_metadata(instance_name):
                             ])})})}))
 
 
+# Create HTM instance
 htm_instance = t.add_resource(ec2.Instance(
     'HTM',
     ImageId=ami_ids["htm"],
@@ -401,6 +438,8 @@ htm_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "HTM"]))
 ))
 
+# Create Kafka Instance
+# Start kafka container
 kafka_instance = t.add_resource(ec2.Instance(
     'KafkaInstance',
     ImageId=ami_ids["kafka"],
@@ -458,6 +497,9 @@ kafka_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "Kafka"]))
 ))
 
+# Create DB instance
+# Install MYSQL
+# Load data from the database dumps
 db_instance = t.add_resource(ec2.Instance(
     'DBInstance',
     ImageId=ami_ids["db"],
@@ -549,6 +591,9 @@ db_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "DB"]))
 ))
 
+# Create Web server
+# Configure HTTPD and PHP
+# Configure Rubis webserver
 web_server_instance = t.add_resource(ec2.Instance(
     'WebServerInstance',
     ImageId=ami_ids["web_server"],
@@ -623,6 +668,8 @@ web_server_instance = t.add_resource(ec2.Instance(
         Name=Join("_", [Ref("AWS::StackName"), "WebServer"]))
 ))
 
+# Create 5 Rubis clients instance
+# Configure Rubis clients from the custom rubis repo
 for i in range(1, 6):
     key = "rubis_client" + str(i)
     instance_name = "RubisInstance" + str(i)
@@ -663,6 +710,7 @@ for i in range(1, 6):
                     'chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
                     'chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n',
 
+
                     'yum update -y\n',
                     'yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n',
                     'yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n',
@@ -676,8 +724,8 @@ for i in range(1, 6):
                     'echo "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"" >> /etc/environment\n',
                     'echo "export PATH=\"$JAVA_HOME/bin:$PATH\"" >> /etc/environment\n',
                     'chown ec2-user.ec2-user /RUBiS -R\n',
-                    'make client\n',
-                    'make emulator &\n',
+                    # 'make client\n',
+                    # 'make emulator &\n',
 
                     '/opt/aws/bin/cfn-signal -e $? ',
                     '         --stack=',

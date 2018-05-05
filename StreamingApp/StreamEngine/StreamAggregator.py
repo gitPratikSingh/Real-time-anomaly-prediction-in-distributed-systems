@@ -1,3 +1,8 @@
+# Author: Anirudha Tambolkar
+# Description: Perform aggregation on data from metrics and responsetime topic
+#              and produce to aggregate topic. Runs on NAT instance
+
+
 import kafka
 from kafka import KafkaConsumer
 from kafka import KafkaProducer

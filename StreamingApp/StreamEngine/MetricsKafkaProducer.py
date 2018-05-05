@@ -1,3 +1,6 @@
+# Author: Anirudha Tambolkar
+# Description: Get Instance metrics (cpu and memory) and produce on metrics topic
+
 import psutil
 import time
 import kafka
@@ -19,7 +22,8 @@ def main():
                     mem = str(int(psutil.virtual_memory().percent))
                     data = ",".join([epoch, cpu, mem])
                     last_epoch = epoch
-                    future = producer.send(producer_topic, data)
+                    producer.send(producer_topic, data)
+                    # future = producer.send(producer_topic, data)
                     # Block for 'synchronous' sends
                     # try:
                     #     future.get(timeout=10)

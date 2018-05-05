@@ -1,0 +1,2126 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "CSC-724 stack created by Anirudha Tambolkar",
+    "Parameters": {
+        "PrivateSubnetCidr": {
+            "Default": "172.25.128.0/17",
+            "Description": "Private Subnet CIDR",
+            "Type": "String"
+        },
+        "PublicSubnetCidr": {
+            "Default": "172.25.0.0/17",
+            "Description": "Public Subnet CIDR",
+            "Type": "String"
+        },
+        "VPCCIDR": {
+            "Default": "172.25.0.0/16",
+            "Description": "The IP address space for this VPC, in CIDR notation",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "DBInstance": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": 1,
+                    "Timeout": "PT15M"
+                }
+            },
+            "DependsOn": [
+                "PrivateDefaultRoute"
+            ],
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.",
+                                            "DBInstance",
+                                            ".Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource=",
+                                            "DBInstance",
+                                            "         --region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "runas=root\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "packages": {
+                            "yum": {
+                                "httpd": []
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                },
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/xvda",
+                        "Ebs": {
+                            "VolumeSize": "15"
+                        }
+                    }
+                ],
+                "IamInstanceProfile": "NatS3Access",
+                "ImageId": "ami-ab1a31ce",
+                "InstanceType": "t2.micro",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.130.7",
+                        "SubnetId": {
+                            "Ref": "PrivateSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "DB"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=DBInstance",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/db /home/ec2-user/.ssh/id_rsa\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/db.pub /home/ec2-user/.ssh/id_rsa.pub\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n",
+                                "chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "yum update -y\n",
+                                "yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n",
+                                "yum install -y mysql56-server php70-mysqlnd gcc git\n",
+                                "pip install psutil kafka-python\n",
+                                "service mysqld start\n",
+                                "mysql_secure_installation << EOL\n",
+                                "\n",
+                                "n\n",
+                                "Y\n",
+                                "Y\n",
+                                "Y\n",
+                                "Y\n",
+                                "EOL\n",
+                                "chkconfig mysqld on\n",
+                                "git clone https://github.com/atambol/RUBiS.git\n",
+                                "export RUBIS_HOME=`readlink -f RUBiS`\n",
+                                "cd $RUBIS_HOME/database\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis_backup.sql.gz rubis_backup.sql.gz\n",
+                                "chmod 644 rubis_backup.sql.gz\n",
+                                "gunzip rubis_backup.sql.gz\n",
+                                "mysql -u root --execute=\"CREATE DATABASE rubis;\"\n",
+                                "mysql -u root --execute=\"GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;\"\n",
+                                "mysql -uroot rubis < rubis.sql\n",
+                                "mysql -uroot rubis < categories.sql\n",
+                                "mysql -uroot rubis < regions.sql\n",
+                                "mysql -uroot rubis < rubis_backup.sql\n",
+                                "/opt/aws/bin/cfn-signal -e $? ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=DBInstance",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "HTM": {
+            "DependsOn": [
+                "PrivateDefaultRoute"
+            ],
+            "Properties": {
+                "ImageId": "ami-6e95a50b",
+                "InstanceType": "t2.large",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.130.10",
+                        "SubnetId": {
+                            "Ref": "PrivateSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "HTM"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "InstanceSecurityGroup": {
+            "Properties": {
+                "GroupDescription": "Instance security group",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": -1,
+                        "IpProtocol": "-1",
+                        "ToPort": -1
+                    }
+                ],
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": -1,
+                        "IpProtocol": "-1",
+                        "ToPort": -1
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "instance",
+                                    "security",
+                                    "group"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "InternetGateway": {
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "gateway"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::EC2::InternetGateway"
+        },
+        "InternetGatewayAttachment": {
+            "Properties": {
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::VPCGatewayAttachment"
+        },
+        "KafkaInstance": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": 1,
+                    "Timeout": "PT5M"
+                }
+            },
+            "DependsOn": [
+                "PrivateDefaultRoute"
+            ],
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.",
+                                            "KafkaInstance",
+                                            ".Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource=",
+                                            "KafkaInstance",
+                                            "         --region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "runas=root\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "packages": {
+                            "yum": {
+                                "httpd": []
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                },
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "IamInstanceProfile": "NatS3Access",
+                "ImageId": "ami-ab1a31ce",
+                "InstanceType": "t2.large",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.130.9",
+                        "SubnetId": {
+                            "Ref": "PrivateSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "Kafka"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=KafkaInstance",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/kafka /home/ec2-user/.ssh/id_rsa\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/kafka.pub /home/ec2-user/.ssh/id_rsa.pub\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n",
+                                "chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "yum update -y\n",
+                                "yum install docker -y\n",
+                                "service docker start\n",
+                                "sudo docker run --rm -it -d -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -e ADV_HOST=172.25.130.9 -m 6000M landoop/fast-data-dev\n",
+                                "/opt/aws/bin/cfn-signal -e $? ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=KafkaInstance",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "NatInstance": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": 1,
+                    "Timeout": "PT5M"
+                }
+            },
+            "DependsOn": [
+                "InternetGatewayAttachment"
+            ],
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.NatInstance.Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource=NatInstance",
+                                            "         --region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "runas=root\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "packages": {
+                            "yum": {
+                                "httpd": []
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                },
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "IamInstanceProfile": "NatS3Access",
+                "ImageId": "ami-f27b5a97",
+                "InstanceType": "t2.micro",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "NatSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.0.5",
+                        "SubnetId": {
+                            "Ref": "PublicSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "false",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "Nat"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=NatInstance",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/nat /home/ec2-user/.ssh/id_rsa\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/nat.pub /home/ec2-user/.ssh/id_rsa.pub\n",
+                                "chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "# Configure iptables\n",
+                                "/sbin/iptables -t nat -A PREROUTING -p tcp --dport 3030 -j DNAT --to-destination 172.25.130.9:3030\n",
+                                "/sbin/iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination 172.25.130.8:80\n",
+                                "/sbin/iptables -t nat -A POSTROUTING -o eth0 -s 0.0.0.0/0 -j MASQUERADE\n",
+                                "/sbin/iptables-save > /etc/sysconfig/iptables\n",
+                                "# Configure ip forwarding and redirects\n",
+                                "echo 1 >  /proc/sys/net/ipv4/ip_forward && echo 0 >  /proc/sys/net/ipv4/conf/eth0/send_redirects\n",
+                                "mkdir -p /etc/sysctl.d/\n",
+                                "cat <<EOF > /etc/sysctl.d/nat.conf\n",
+                                "net.ipv4.ip_forward = 1\n",
+                                "net.ipv4.conf.eth0.send_redirects = 0\n",
+                                "EOF\n",
+                                "sysctl -p /etc/sysctl.d/nat.conf\n",
+                                "pip install kafka-python\n",
+                                "wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/StreamAggregator.py -P /home/ec2-user\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/*.py\n",
+                                "/opt/aws/bin/cfn-signal -e $?",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=NatInstance",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "NatSecurityGroup": {
+            "Properties": {
+                "GroupDescription": "Nat security group",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": -1,
+                        "IpProtocol": "-1",
+                        "ToPort": -1
+                    }
+                ],
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": -1,
+                        "IpProtocol": "-1",
+                        "ToPort": -1
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "nat",
+                                    "security",
+                                    "group"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "PrivateDefaultRoute": {
+            "DependsOn": [
+                "NatInstance"
+            ],
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "InstanceId": {
+                    "Ref": "NatInstance"
+                },
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable"
+                }
+            },
+            "Type": "AWS::EC2::Route"
+        },
+        "PrivateRouteAssociation": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "PrivateSubnet"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PrivateRouteTable": {
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "private",
+                                    "route",
+                                    "table"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
+        "PrivateSubnet": {
+            "Properties": {
+                "AvailabilityZone": "us-east-2b",
+                "CidrBlock": {
+                    "Ref": "PrivateSubnetCidr"
+                },
+                "MapPublicIpOnLaunch": "false",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "private",
+                                    "subnet"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "PublicDefaultRoute": {
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                }
+            },
+            "Type": "AWS::EC2::Route"
+        },
+        "PublicRouteAssociation": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "PublicSubnet"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PublicRouteTable": {
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "public",
+                                    "route",
+                                    "table"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
+        "PublicSubnet": {
+            "Properties": {
+                "AvailabilityZone": "us-east-2b",
+                "CidrBlock": {
+                    "Ref": "PublicSubnetCidr"
+                },
+                "MapPublicIpOnLaunch": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "public",
+                                    "subnet"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "RubisInstance1": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": 1,
+                    "Timeout": "PT5M"
+                }
+            },
+            "DependsOn": [
+                "DBInstance"
+            ],
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.",
+                                            "RubisInstance1",
+                                            ".Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource=",
+                                            "RubisInstance1",
+                                            "         --region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "runas=root\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "packages": {
+                            "yum": {
+                                "httpd": []
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                },
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "IamInstanceProfile": "NatS3Access",
+                "ImageId": "ami-ab1a31ce",
+                "InstanceType": "t2.micro",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.130.11",
+                        "SubnetId": {
+                            "Ref": "PrivateSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "RubisInstance1"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance1",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                1,
+                                " /home/ec2-user/.ssh/id_rsa\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                1,
+                                " /home/ec2-user/.ssh/id_rsa.pub\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n",
+                                "chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "yum update -y\n",
+                                "yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n",
+                                "yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n",
+                                "pip install psutil\n",
+                                "git clone https://github.com/atambol/RUBiS.git\n",
+                                "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\n",
+                                "export RUBIS_HOME=`readlink -f RUBiS`\n",
+                                "cd $RUBIS_HOME/Client\n",
+                                "export PATH=\"$JAVA_HOME/bin:$PATH\"\n",
+                                "echo \"export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\" >> /etc/environment\n",
+                                "echo \"export PATH=\"$JAVA_HOME/bin:$PATH\"\" >> /etc/environment\n",
+                                "chown ec2-user.ec2-user /RUBiS -R\n",
+                                "/opt/aws/bin/cfn-signal -e $? ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance1",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "RubisInstance2": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": 1,
+                    "Timeout": "PT5M"
+                }
+            },
+            "DependsOn": [
+                "DBInstance"
+            ],
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.",
+                                            "RubisInstance2",
+                                            ".Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource=",
+                                            "RubisInstance2",
+                                            "         --region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "runas=root\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "packages": {
+                            "yum": {
+                                "httpd": []
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                },
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "IamInstanceProfile": "NatS3Access",
+                "ImageId": "ami-ab1a31ce",
+                "InstanceType": "t2.micro",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.130.12",
+                        "SubnetId": {
+                            "Ref": "PrivateSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "RubisInstance2"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance2",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                2,
+                                " /home/ec2-user/.ssh/id_rsa\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                2,
+                                " /home/ec2-user/.ssh/id_rsa.pub\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n",
+                                "chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "yum update -y\n",
+                                "yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n",
+                                "yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n",
+                                "pip install psutil\n",
+                                "git clone https://github.com/atambol/RUBiS.git\n",
+                                "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\n",
+                                "export RUBIS_HOME=`readlink -f RUBiS`\n",
+                                "cd $RUBIS_HOME/Client\n",
+                                "export PATH=\"$JAVA_HOME/bin:$PATH\"\n",
+                                "echo \"export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\" >> /etc/environment\n",
+                                "echo \"export PATH=\"$JAVA_HOME/bin:$PATH\"\" >> /etc/environment\n",
+                                "chown ec2-user.ec2-user /RUBiS -R\n",
+                                "/opt/aws/bin/cfn-signal -e $? ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance2",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "RubisInstance3": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": 1,
+                    "Timeout": "PT5M"
+                }
+            },
+            "DependsOn": [
+                "DBInstance"
+            ],
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.",
+                                            "RubisInstance3",
+                                            ".Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource=",
+                                            "RubisInstance3",
+                                            "         --region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "runas=root\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "packages": {
+                            "yum": {
+                                "httpd": []
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                },
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "IamInstanceProfile": "NatS3Access",
+                "ImageId": "ami-ab1a31ce",
+                "InstanceType": "t2.micro",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.130.13",
+                        "SubnetId": {
+                            "Ref": "PrivateSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "RubisInstance3"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance3",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                3,
+                                " /home/ec2-user/.ssh/id_rsa\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                3,
+                                " /home/ec2-user/.ssh/id_rsa.pub\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n",
+                                "chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "yum update -y\n",
+                                "yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n",
+                                "yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n",
+                                "pip install psutil\n",
+                                "git clone https://github.com/atambol/RUBiS.git\n",
+                                "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\n",
+                                "export RUBIS_HOME=`readlink -f RUBiS`\n",
+                                "cd $RUBIS_HOME/Client\n",
+                                "export PATH=\"$JAVA_HOME/bin:$PATH\"\n",
+                                "echo \"export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\" >> /etc/environment\n",
+                                "echo \"export PATH=\"$JAVA_HOME/bin:$PATH\"\" >> /etc/environment\n",
+                                "chown ec2-user.ec2-user /RUBiS -R\n",
+                                "/opt/aws/bin/cfn-signal -e $? ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance3",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "RubisInstance4": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": 1,
+                    "Timeout": "PT5M"
+                }
+            },
+            "DependsOn": [
+                "DBInstance"
+            ],
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.",
+                                            "RubisInstance4",
+                                            ".Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource=",
+                                            "RubisInstance4",
+                                            "         --region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "runas=root\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "packages": {
+                            "yum": {
+                                "httpd": []
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                },
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "IamInstanceProfile": "NatS3Access",
+                "ImageId": "ami-ab1a31ce",
+                "InstanceType": "t2.micro",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.130.14",
+                        "SubnetId": {
+                            "Ref": "PrivateSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "RubisInstance4"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance4",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                4,
+                                " /home/ec2-user/.ssh/id_rsa\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                4,
+                                " /home/ec2-user/.ssh/id_rsa.pub\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n",
+                                "chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "yum update -y\n",
+                                "yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n",
+                                "yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n",
+                                "pip install psutil\n",
+                                "git clone https://github.com/atambol/RUBiS.git\n",
+                                "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\n",
+                                "export RUBIS_HOME=`readlink -f RUBiS`\n",
+                                "cd $RUBIS_HOME/Client\n",
+                                "export PATH=\"$JAVA_HOME/bin:$PATH\"\n",
+                                "echo \"export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\" >> /etc/environment\n",
+                                "echo \"export PATH=\"$JAVA_HOME/bin:$PATH\"\" >> /etc/environment\n",
+                                "chown ec2-user.ec2-user /RUBiS -R\n",
+                                "/opt/aws/bin/cfn-signal -e $? ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance4",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "RubisInstance5": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": 1,
+                    "Timeout": "PT5M"
+                }
+            },
+            "DependsOn": [
+                "DBInstance"
+            ],
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.",
+                                            "RubisInstance5",
+                                            ".Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource=",
+                                            "RubisInstance5",
+                                            "         --region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "runas=root\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "packages": {
+                            "yum": {
+                                "httpd": []
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                },
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "IamInstanceProfile": "NatS3Access",
+                "ImageId": "ami-ab1a31ce",
+                "InstanceType": "t2.micro",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.130.15",
+                        "SubnetId": {
+                            "Ref": "PrivateSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "RubisInstance5"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance5",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                5,
+                                " /home/ec2-user/.ssh/id_rsa\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/rubis",
+                                5,
+                                " /home/ec2-user/.ssh/id_rsa.pub\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n",
+                                "chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "yum update -y\n",
+                                "yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n",
+                                "yum install git gcc java-1.8.0-openjdk-devel.x86_64 -y\n",
+                                "pip install psutil\n",
+                                "git clone https://github.com/atambol/RUBiS.git\n",
+                                "export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\n",
+                                "export RUBIS_HOME=`readlink -f RUBiS`\n",
+                                "cd $RUBIS_HOME/Client\n",
+                                "export PATH=\"$JAVA_HOME/bin:$PATH\"\n",
+                                "echo \"export JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk\"\" >> /etc/environment\n",
+                                "echo \"export PATH=\"$JAVA_HOME/bin:$PATH\"\" >> /etc/environment\n",
+                                "chown ec2-user.ec2-user /RUBiS -R\n",
+                                "/opt/aws/bin/cfn-signal -e $? ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=RubisInstance5",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "VPC": {
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "VPCCIDR"
+                },
+                "InstanceTenancy": "default",
+                "Tags": [
+                    {
+                        "Key": "Creator",
+                        "Value": "cerberus"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::EC2::VPC"
+        },
+        "WebServerInstance": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": 1,
+                    "Timeout": "PT5M"
+                }
+            },
+            "DependsOn": [
+                "PrivateDefaultRoute"
+            ],
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.",
+                                            "WebServerInstance",
+                                            ".Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v ",
+                                            "         --stack=",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            "         --resource=",
+                                            "WebServerInstance",
+                                            "         --region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "runas=root\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "packages": {
+                            "yum": {
+                                "httpd": []
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                },
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "IamInstanceProfile": "NatS3Access",
+                "ImageId": "ami-ab1a31ce",
+                "InstanceType": "t2.small",
+                "KeyName": "724_keypair",
+                "NetworkInterfaces": [
+                    {
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            }
+                        ],
+                        "PrivateIpAddress": "172.25.130.8",
+                        "SubnetId": {
+                            "Ref": "PrivateSubnet"
+                        }
+                    }
+                ],
+                "SourceDestCheck": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "_",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "WebServer"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=WebServerInstance",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/web_server /home/ec2-user/.ssh/id_rsa\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/web_server.pub /home/ec2-user/.ssh/id_rsa.pub\n",
+                                "aws --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " s3 cp s3://atambol/keys/authorized_keys /home/ec2-user/.ssh/authorized_keys\n",
+                                "chmod 400 /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/.ssh/id_rsa /home/ec2-user/.ssh/id_rsa.pub /home/ec2-user/.ssh/authorized_keys\n",
+                                "yum update -y\n",
+                                "yum remove -y php-pdo-5.3.29-1.8.amzn1.x86_64 php-common-5.3.29-1.8.amzn1.x86_64 httpd-2.2.34-1.16.amzn1.x86_64 httpd-tools-2.2.34-1.16.amzn1.x86_64 php-5.3.29-1.8.amzn1.x86_64 php-process-5.3.29-1.8.amzn1.x86_64 php-xml-5.3.29-1.8.amzn1.x86_64 php-cli-5.3.29-1.8.amzn1.x86_64 php-gd-5.3.29-1.8.amzn1.x86_64\n",
+                                "yum install -y httpd24 php70 php70-mysqlnd gcc git\n",
+                                "pip install psutil kafka-python\n",
+                                "service httpd start\n",
+                                "chkconfig httpd on\n",
+                                "#chkconfig --list httpd\n",
+                                "usermod -a -G apache ec2-user\n",
+                                "chown -R ec2-user:apache /var/www\n",
+                                "chmod 2775 /var/www\n",
+                                "find /var/www -type d -exec sudo chmod 2775 {} \\;\n",
+                                "find /var/www -type f -exec sudo chmod 0664 {} \\;\n",
+                                "git clone https://github.com/atambol/RUBiS.git\n",
+                                "export RUBIS_HOME=`readlink -f RUBiS`\n",
+                                "cp -r $RUBIS_HOME/PHP/ /var/www/html/\n",
+                                "wget https://raw.githubusercontent.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/master/StreamingApp/StreamEngine/MetricsKafkaProducer.py -P /home/ec2-user/\n",
+                                "chown ec2-user.ec2-user /home/ec2-user/MetricsKafkaProducer.py\n",
+                                "python /home/ec2-user/MetricsKafkaProducer.py & \n",
+                                "/opt/aws/bin/cfn-signal -e $? ",
+                                "         --stack=",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource=WebServerInstance",
+                                "         --region=",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        }
+    }
+}

@@ -489,12 +489,12 @@ Avg leadtime 11.0
 Model accuracy0.943711521548
 
 0.98
-TP: 1 FP: 33 TN: 2180 FN: 60
+TP: 3 FP: 33 TN: 2188 FN: 50
 Avg leadtime 12.0
 Model accuracy0.959102902375
 
 0.99
-TP: 1 FP: 33 TN: 2180 FN: 60
+TP: 3 FP: 33 TN: 2188 FN: 50
 Avg leadtime 12.0
 Model accuracy0.959102902375
 

@@ -16,7 +16,7 @@ model1 = lambda: None
 model2 = lambda: None
 model3 = lambda: None
 
-_FILE_PATH = "../../ML/TrainingData.txt"
+_FILE_PATH = "../Data/TrainingData.txt"
 
 def runModel(jsonData):
 	global model1

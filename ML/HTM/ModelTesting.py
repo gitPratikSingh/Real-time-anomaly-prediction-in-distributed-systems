@@ -16,7 +16,7 @@ import time
 from nupic.engine import Network
 
 _RECORD_SENSOR = "sensorRegion"
-_FILE_PATH = "../../ML/TestingData.txt"
+_FILE_PATH = "../Data/TestingData.txt"
 
 model1 = lambda: None
 model2 = lambda: None
@@ -66,7 +66,7 @@ def runModel(jsonData, printflag):
 	actualVal, predictions, errorVal, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, True, True)
 	anomalywindow.append(anomalyScore)
 	
-	# find the future anomaly scores as well
+	# find the future anomaly scores with learning mode OFF
 	for prediction in predictions:
 		x, y, z, anomalyScore = NetworkModel.runNetwork(model1.network, model1.dataSource, cpuMetric, False, False)
 		anomalywindow.append(anomalyScore)

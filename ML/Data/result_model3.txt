@@ -1,0 +1,504 @@
+0.0
+TP: 53 FP: 2221 TN: 0 FN: 0
+Avg leadtime 46.80
+Model accuracy0.0230694810905
+
+0.01
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.02
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.03
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.04
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.05
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.06
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.07
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.08
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.09
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.1
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.11
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.12
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.13
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.14
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.15
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.16
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.17
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.18
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.19
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.2
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.21
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.22
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.23
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.24
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.25
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.26
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.27
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.28
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.29
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.3
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.31
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.32
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.33
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.34
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.35
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.36
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.37
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.38
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.39
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.4
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.41
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.42
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.43
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.44
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.45
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.46
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.47
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.48
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.49
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.5
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.51
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.52
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.53
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.54
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.55
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.56
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.57
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.58
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.59
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.6
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.61
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.62
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.63
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.64
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.65
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.66
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.67
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.68
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.69
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.7
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.71
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.72
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.73
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.74
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.75
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.76
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.77
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.78
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.79
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.8
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.81
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.82
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.83
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.84
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.85
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.86
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.87
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.88
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.89
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.9
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.91
+TP: 52 FP: 2213 TN: 8 FN: 1
+Avg leadtime 43.77
+Model accuracy0.0263854440630
+
+0.92
+TP: 52 FP: 2213 TN: 8 FN: 1
+Avg leadtime 43.77
+Model accuracy0.0263854440630
+
+0.93
+TP: 52 FP: 2213 TN: 8 FN: 1
+Avg leadtime 43.77
+Model accuracy0.0263854440630
+
+0.94
+TP: 52 FP: 2219 TN: 2 FN: 1
+Avg leadtime 46.80
+Model accuracy0.0234198635131
+
+0.95
+TP: 52 FP: 2213 TN: 8 FN: 1
+Avg leadtime 43.77
+Model accuracy0.0263854440630
+
+0.96
+TP: 52 FP: 2213 TN: 8 FN: 1
+Avg leadtime 43.77
+Model accuracy0.0263854440630
+
+0.97
+TP: 52 FP: 2213 TN: 8 FN: 1
+Avg leadtime 43.77
+Model accuracy0.0263854440630
+
+0.98
+TP: 52 FP: 2213 TN: 8 FN: 1
+Avg leadtime 43.77
+Model accuracy0.0263854440630
+
+0.99
+TP: 52 FP: 2165 TN: 56 FN: 1
+Avg leadtime 43.77
+Model accuracy0.0474935179123
+
+1
+TP: 0 FP: 0 TN: 2221 FN: 53
+Avg leadtime 0.0
+Model accuracy0.9983458221607

@@ -1,3 +1,7 @@
+# Author: Pratik Singh
+# Description: Consumes CPU incrementally 1st sec = 1%CPU, 2nd sec = 2%CPU, ....100th sec = 100%CPU  
+
+
 import time
 import threading
 

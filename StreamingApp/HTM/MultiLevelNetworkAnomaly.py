@@ -1,3 +1,7 @@
+
+# Author: Pratik Singh
+# Description: Model III
+
 import os
 import numpy
 import json

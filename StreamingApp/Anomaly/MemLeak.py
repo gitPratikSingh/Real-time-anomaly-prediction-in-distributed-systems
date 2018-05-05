@@ -1,3 +1,6 @@
+# Author: Pratik Singh
+# Description: Consumes MEM exponentially # adds 1 KB, 2KB, 4kB and so on
+
 import time
 def memLeak():
         # takes up memory exponentially

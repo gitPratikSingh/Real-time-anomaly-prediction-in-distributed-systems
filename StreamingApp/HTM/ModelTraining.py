@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# Author: Pratik Singh
+# Description: Builds Models(I,II,III) from scratch and saves them in pickle file
+
 import psutil
 import json
 import sys
@@ -36,7 +40,7 @@ def runModel(jsonData):
 	elapsed = end - start
 	model1.outputFile.write(str(actualVal) + "|" + str(predictions) + "|" + errorVal + "|" + str(anomalyScore) + "|" +str(elapsed.microseconds/1000) +"\n")
 	model1.outputFile.flush()
-	"""
+	
 	start = datetime.datetime.now()
 	actualVal, predictions, errorVal, anomalyScore = MultiLevelNetworkModel.runNetwork(model2.network, model2.dataSource, cpuMetric, False)
 	end = datetime.datetime.now()
@@ -50,7 +54,7 @@ def runModel(jsonData):
 	elapsed = end - start
 	model3.outputFile.write(str(actualVal) + "|" + str(anomalyScore) + "|" + str(elapsed.microseconds/1000) +"\n")
 	model3.outputFile.flush()
-	"""
+	
 	
 def initModels():
 	global model1
@@ -59,7 +63,7 @@ def initModels():
 	model1.outputFile.write("actualVal|predictions|avgError|anomalyScore|time(ms)\n")
 	model1.outputFile.flush()
 	
-	"""
+	
 	global model2
 	model2.dataSource, model2.network = MultiLevelNetworkModel.BuildNetwork()
 	model2.outputFile = open("model2.txt","w+")
@@ -71,7 +75,7 @@ def initModels():
 	model3.outputFile = open("model3.txt","w+")
 	model3.outputFile.write("actualVal|anomalyScore|time(ms)\n")
 	model3.outputFile.flush()
-	"""
+	
 	
 def main():
 	var_bootstrap_servers='172.25.130.9'+':9092'

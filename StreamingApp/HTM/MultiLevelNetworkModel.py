@@ -1,3 +1,6 @@
+# Author: Pratik Singh
+# Description: Model II
+
 import os
 import numpy
 import json

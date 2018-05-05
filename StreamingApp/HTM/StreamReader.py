@@ -1,6 +1,6 @@
-
 """
-Kafka based file based implementation of a record stream
+# Author: Pratik Singh
+# Description: Kafka based implementation of a record stream. It integrates the kafka with the models
 """
 
 import os

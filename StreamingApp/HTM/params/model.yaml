@@ -1,4 +1,8 @@
 # Parameters of the model to be created.
+
+# Author: Pratik Singh
+# Description: Model params
+
 modelParams:
 
   inferenceType: TemporalMultiStep

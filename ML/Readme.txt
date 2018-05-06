@@ -28,8 +28,7 @@ Model 3:
 	Model accuracy: 4.75 %
 	
 	
-Model 1 seems to be working fine. But Model 2 and Model 3 predict anomaly very frequently(very high percentage of False Positives). Model 2,3
-give anomaly scores close to 1 even for non-anomalous data. 
+Model 1 seems to be working fine. But Model 2 and Model 3 predict anomaly very frequently(very high percentage of False Positives). Model 2,3 very frequently give anomaly scores close to 1 even for non-anomalous data. 
 
 How the model works: 
 1. The models first learns on the training data. I enabled the inference/learning mode of spatial pooler and temporary memory during training.

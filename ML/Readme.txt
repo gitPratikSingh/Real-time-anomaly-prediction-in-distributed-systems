@@ -59,4 +59,7 @@ thread updates the predictionList and classifies the predictions into TP, FP, TN
 	d) A prediction is FN, if the model does not predicted any anomaly at t1, and SLO violation(s) occur during (t1, t1+50).
 
 
+# We were not able to produce SLO violations due memory leak. We observed that even when the web server's memory was full, the SLO violations
+does not occur. Normal workload's memory consumption was 30%. We introduced the memoryleak and the memory usage went up (95-100%), but no SLO
+violations. We were not able to figure out the issue. We expected to see a lot of SLO violations when memory utilization was >= 90%.    
 

@@ -1,29 +1,3 @@
-![Real-time anomaly prediction in distributed systems](https://github.com/gitPratikSingh/Real-time-anomaly-prediction-in-distributed-systems/blob/master/Capture.PNG?raw=true "Real-time anomaly prediction in distributed systems")
-
-Topic: Anomaly detection & proactive fault management
-
-Below is the timeline of events that happens in any proactive fault management technique
-
-                    Time for prediction      Time for localization     Time for fault fixing
-Error State<-----------------------------><---------------------------><----------------------------->Normal State
-
-Objective: Implement FCHAIN/UBL/PREPARE & try to reduce time for any of the above three sub-states
-
-
-###System components that we need to implement
-* Cloud/cluster monitoring software for data collection
-* Build SLA Prediction Model
-* Detect SLA violations
-* Fault localization
-* Spin/add a new component to replace the faulty component
-
-### System Metrics Description Example
-* AVAILCPU percentage of free CPU cycles 
-* FREEMEM available memory 
-* PAGEIN/OUT virtual page in/out rate 
-* MYFREEDISK free disk space 
-* LOAD1 load in last 1 minute 
-* LOAD5 load in last 5 minutes 
 
 ### System Setting
 ![AWS Architectures](https://github.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/blob/master/AWS_Architecture.png?raw=true "AWS_Architectures")

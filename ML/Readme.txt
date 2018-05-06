@@ -12,28 +12,24 @@ The Testing phase recreates these models from the pickle files and uses them for
 
 Model 1: 
 	AnomalyScoreThreshold = 0.98
-	TP: 3 FP: 33 TN: 2188 FN: 50
 	Avg leadtime 12.0
 	Model accuracy : 95.91 %
 
 	
 Model 2:
 	AnomalyScoreThreshold = 0.99
-	TP: 52 FP: 2165 TN: 56 FN: 1
 	Avg leadtime 43.77
 	Model accuracy: 4.74 %
 
 	
 Model 3:  
 	AnomalyScoreThreshold = 0.99
-	TP: 53 FP: 2165 TN: 56 FN: 0
 	Avg leadtime 46.45
 	Model accuracy: 4.75 %
 	
 	
-	
-Model 1 seems to be working fine. But Model 2 and Model 3 always predict anomaly(very high percentage of False Positives). Model 2,3
-give anomaly scores close to 1 if not 1. I was not able to figure the issue.
+Model 1 seems to be working fine. But Model 2 and Model 3 predict anomaly very frequently(very high percentage of False Positives). Model 2,3
+give anomaly scores close to 1 even for non-anomalous data. 
 
 How the model works: 
 1. The models first learns on the training data. I enabled the inference/learning mode of spatial pooler and temporary memory during training.

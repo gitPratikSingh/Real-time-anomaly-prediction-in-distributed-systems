@@ -1,3 +1,0 @@
-Installation steps:
-
-https://github.com/sguazt/RUBiS

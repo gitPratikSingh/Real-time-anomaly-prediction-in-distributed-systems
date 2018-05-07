@@ -1,8 +1,8 @@
-
-### System Setting
-![AWS Architectures](https://github.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/blob/master/AWS_Architecture.png?raw=true "AWS_Architectures")
-
-##### Overview of the distributed architecture:
+#### Summary
+This is the implementation of our project "Real Time Anomaly Prediction in Distributed System using HTM" for CSC 724 course.
+Contributors: Anirudha Tambolkar and Pratik Singh
+                
+#### Overview of the distributed architecture:
 * The system under observation here is a Rubis cluster that consists of a web server, a database server and multiple clients.
 * The clients generate a workload that consist of 75 percent browse requests.
 * Two important characteristic of the system are collected during this:
@@ -18,7 +18,8 @@
     * Produce this aggregated message on a new topic.
 * HTM engine consumes these messages and predicts based on the trained model if or not an SLO violation is going to occur with some lead time. 
 
-##### Cloudformation:
+#### Cloudformation:
+![AWS Architectures](https://github.com/atambol/Real-time-anomaly-prediction-in-distributed-systems/blob/master/AWS_Architecture.png?raw=true "AWS_Architectures")
 * The whole infrastructure is maintained as Infrastructure as Code using AWS Cloudformation template programmed in Python.
 * Single click deployment of the setup is possible within 15 minutes time.
 * Creating Stack : run `python create_stack.py`
@@ -47,7 +48,7 @@
     * [Optimizing CFN templates](https://aws.amazon.com/blogs/devops/optimize-aws-cloudformation-templates/)
     * [LAMP stack installation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-LAMP.html)
 
-##### RUBiS
+#### RUBiS
 * [RUBiS Repository](https://github.com/atambol/RUBiS)
 * Current installation creates following types of instances for RUBiS: 
     * Rubis Clients
@@ -56,17 +57,17 @@
 * Rubis Web Server UI: http://<NAT's Public IP>:8080/PHP/index.html
 * Rubis Repository is downloaded when the stack is created at `/RUBiS` on each client. The emulator can be started issuing `make emulator` command from within the `Client/` directory. Checkout the RUBiS repository above for more details. 
 
-##### Kafka
+#### Kafka
 * Kafka Broker UI: http://<NAT's Public IP>:3030
 * System metrics topic name: `stats`
 * Response time topic name: `responsetime`
 * Aggregated metrics and response time topic (calculated per second): `aggregate`
 
-##### Anomaly injection
+#### Anomaly injection
 Anomaly is generated using a script that hogs on the CPU in the web server. This higging slowly increases and eventually web server cannot allot sufficient CPU time to web requests. This is the point when the requests start to get longer response times and SLO violations can be therefore triggered using this trick.
 Run the anomaly script on the web server : run `python CPULeak.py`
 
-##### IP addresses of instances in the private network:
+#### IP addresses of instances in the private network:
 * nat: 172.25.0.5
 * db: 172.25.130.7
 * web_server: 172.25.130.8
@@ -79,7 +80,7 @@ Run the anomaly script on the web server : run `python CPULeak.py`
 * rubis_client5: 172.25.130.15
 
 
-##### Model 
+#### Prediction Model 
 * 1. Training: How to train?
    Option1. Place Training.txt in the Data directory, run, python ModelTraining.py file
    Option2. To read training data from Kafka topic, run, python ModelTraining.py   
@@ -128,4 +129,4 @@ thread updates the predictionList and classifies the predictions into TP, FP, TN
 	d) A prediction is FN, if the model does not predicted any anomaly at t1, and SLO violation(s) occur during (t1, t1+50).
 
 
-##### Note: We were not able to produce SLO violations due memory leak we implemented. We observed that even when the web server's memory was full, the SLO violations does not occur. Normal workload's memory consumption was 30%. We introduced the memoryleak and the memory usage went up (95-100%), but no SLO violations. We were not able to figure out the issue. We expected to see a lot of SLO violations when memory utilization was >= 90%.    
+Note: Our method of creating memory leak could not produce SLO violations. We observed that even when the web server's memory was full, the SLO violations does not occur. Normal workload's memory consumption was 30%. We introduced the memoryleak and the memory usage went up (95-100%), but no SLO violations. We were not able to figure out the issue. We expected to see a lot of SLO violations when memory utilization was >= 90%.    

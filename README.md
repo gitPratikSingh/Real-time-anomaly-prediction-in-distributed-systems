@@ -36,6 +36,16 @@
         * Rubis clients
         * HTM engine
 * All the public traffic goes through NAT. No other instance can be accessed directly from internet. This saved both cost of assigning each instance with a public IP and acts as an added security features.
+* Dependencies: 
+    * This code requires boto3 and troposphere libraries to be installed on the machine.
+    * AWS access and secret keys should be configured to create the cloudformation stack using the command above. 
+    * Private key to access NAT : 724_keypair.pem. Ensure this key is already created and locally downloaded or create a new key.
+    * Ensure NatS3Access IAM role is created before running this template. This role allows the instances to download necessary files from S3.
+    * HTM instance uses a pre-baked AMI. This AMI is an ubuntu image with some pre-installation for HTM. 
+    * The aggregation is performed in the NAT instance and need to be manually started when workload is being simulated by running `python StreamAggregator.py`
+* References: 
+    * [Optimizing CFN templates](https://aws.amazon.com/blogs/devops/optimize-aws-cloudformation-templates/)
+    * [LAMP stack installation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-LAMP.html)
 
 ##### RUBiS
 * [RUBiS Repository](https://github.com/atambol/RUBiS)
@@ -44,6 +54,7 @@
     * DB Server
     * Web Server
 * Rubis Web Server UI: http://<NAT's Public IP>:8080/PHP/index.html
+* Rubis Repository is downloaded when the stack is created at `/RUBiS` on each client. The emulator can be started issuing `make emulator` command from within the `Client/` directory. Checkout the RUBiS repository above for more details. 
 
 ##### Kafka
 * Kafka Broker UI: http://<NAT's Public IP>:3030
@@ -52,7 +63,8 @@
 * Aggregated metrics and response time topic (calculated per second): `aggregate`
 
 ##### Anomaly injection
-Anomaly is generated using a script that hogs on the CPU in the web server. This higging slowly increases and eventually web server cannot allot sufficient CPU time to web requests. This is the point when the requests start to get longer response times and SLO violations can be therefore triggered using this trick. 
+Anomaly is generated using a script that hogs on the CPU in the web server. This higging slowly increases and eventually web server cannot allot sufficient CPU time to web requests. This is the point when the requests start to get longer response times and SLO violations can be therefore triggered using this trick.
+Run the anomaly script on the web server : run `python CPULeak.py`
 
 ##### IP addresses of instances in the private network:
 * nat: 172.25.0.5
@@ -65,8 +77,6 @@ Anomaly is generated using a script that hogs on the CPU in the web server. This
 * rubis_client3: 172.25.130.13
 * rubis_client4: 172.25.130.14
 * rubis_client5: 172.25.130.15
-
-
 
 
 ##### Model 
@@ -118,19 +128,4 @@ thread updates the predictionList and classifies the predictions into TP, FP, TN
 	d) A prediction is FN, if the model does not predicted any anomaly at t1, and SLO violation(s) occur during (t1, t1+50).
 
 
-#We were not able to produce SLO violations due memory leak. We observed that even when the web server's memory was full, the SLO violations does not occur. Normal workload's memory consumption was 30%. We introduced the memoryleak and the memory usage went up (95-100%), but no SLO violations. We were not able to figure out the issue. We expected to see a lot of SLO violations when memory utilization was >= 90%.    
-
-
-
-
-##### Notes:
-* Private key to access NAT : 724_keypair.pem
-* Ensure NatS3Access IAM role is created before running this template
-* HTM instance uses a pre-baked AMI
-* The aggregation is performed in the NAT instance and need to be manually started when workload is being simulated.
-* References: 
-    * [Optimizing CFN templates](https://aws.amazon.com/blogs/devops/optimize-aws-cloudformation-templates/)
-    * [LAMP stack installation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-LAMP.html)
-    
-    
-
+##### Note: We were not able to produce SLO violations due memory leak we implemented. We observed that even when the web server's memory was full, the SLO violations does not occur. Normal workload's memory consumption was 30%. We introduced the memoryleak and the memory usage went up (95-100%), but no SLO violations. We were not able to figure out the issue. We expected to see a lot of SLO violations when memory utilization was >= 90%.    

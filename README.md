@@ -113,7 +113,7 @@ Model 1 seems to be working fine. But Model 2 and Model 3 predict anomaly very f
 How the model works: 
 1. The models first learns on the training data. I enabled the inference/learning mode of spatial pooler and temporary memory during training. The model is configured using model params, to provide 7 steps ahead predictions as well. The model is trained on non-anomalous data
 
-2. At the end of the training phase, the models are saved in pickle files for later use.
+2. At the end of the training phase, the models are saved in pickle files for later use.The is WAD
 
 3. In the testing phase, the models are recreated from the pickle files. Each model consumes the current input from the stream(with inference mode ON),and provides the next 7 steps predictions. Then each model is fed the predicted 7 steps(with inference mode OFF), which gives us the future anomalous score values. When any of the future anomaly scores are greater than anomalyscore threshold, then the model predicts an anomaly.
 

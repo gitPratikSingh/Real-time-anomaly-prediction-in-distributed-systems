@@ -1,4 +1,4 @@
-# Author: Anirudha Tambolkar
+# Author: Pratik Singh
 # Description: Get Instance metrics (cpu and memory) and produce on metrics topic
 
 import psutil
